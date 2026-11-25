@@ -18,6 +18,9 @@ func All() []Check {
 		{"stray", Stray},
 		{"frontmatter", Frontmatter},
 		{"links", Links},
+		{"index", Index},
+		{"duplicates", Duplicates},
+		{"orphans", Orphans},
 	}
 }
 

@@ -60,10 +60,14 @@ func TestCheckSorted(t *testing.T) {
 	})
 	code, out, errOut := run(t, dir, "check")
 	want := "frontmatter: knowledge/glossary/a.md: no frontmatter\n" +
+		"index: knowledge/glossary/a.md: page is not linked from the index\n" +
+		"orphans: knowledge/glossary/a.md: no other page links to this page\n" +
 		"frontmatter: knowledge/glossary/b.md: missing key: created\n" +
 		"frontmatter: knowledge/glossary/b.md: missing key: updated\n" +
+		"index: knowledge/glossary/b.md: page is not linked from the index\n" +
+		"orphans: knowledge/glossary/b.md: no other page links to this page\n" +
 		"stray: knowledge/notes.md: markdown file outside the page folders\n" +
-		"FAIL: 4 finding(s)\n"
+		"FAIL: 8 finding(s)\n"
 	if code != 1 || out != want {
 		t.Fatalf("code=%d out=%q err=%q", code, out, errOut)
 	}
