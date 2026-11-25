@@ -1,0 +1,7 @@
+[
+  {
+    "check": "links",
+    "path": "knowledge/domains/api-contract.md",
+    "message": "target not found"
+  }
+]

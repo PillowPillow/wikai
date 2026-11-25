@@ -1,0 +1,7 @@
+[
+  {
+    "check": "links",
+    "path": "knowledge/repos/example-backend.md",
+    "message": "link leaves the base"
+  }
+]
