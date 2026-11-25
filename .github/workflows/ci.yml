@@ -1,0 +1,5 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  gates:
+    uses: ./.github/workflows/gates.yml
