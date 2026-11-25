@@ -1,0 +1,85 @@
+version: 1
+root: .
+locale: fr
+title: filename
+links: wikilink
+ignore: [_meta, 90-templates, .claude, .obsidian, CLAUDE.md, AGENTS.md]
+unchecked_frontmatter: [00-inbox]
+
+frontmatter:
+  type:    { required: true }
+  created: { required: true, format: date }
+  updated: { required: true, format: date }
+  sources: { required: true, format: list }
+
+types:
+  wiki:
+    folders: [20-wiki, 50-missions]
+    frontmatter:
+      status:   { required: true, values: [draft, done] }
+      kind:     { required: true, values: [summary, concept, entity, comparison, answer] }
+      sources:  { required: true, format: list, non_empty: true }
+      reviewed: { required: true, format: date, empty_allowed: true }
+    kinds:
+      concept: { folder: 20-wiki/concepts, skeleton: wiki-concept, name: "{title}", set: { kind: concept } }
+      summary: { folder: 20-wiki/resumes,  skeleton: wiki-resume,  name: "Résumé - {title}", set: { kind: summary } }
+      entity:
+        folder: 20-wiki/entites
+        skeleton: wiki-entite
+        name: "{title}"
+        set: { kind: entity }
+        frontmatter:
+          entity_kind: { required: true, values: [person, tool, org] }
+  meta: {}
+  mission:
+    folders: [50-missions]
+
+skeletons: _meta/skeletons
+
+stray: false
+
+index:
+  file: index.md
+  check: false
+  include: [20-wiki]
+  other_links: allow
+  groups:
+    20-wiki/concepts: "Concepts et comparaisons (`20-wiki/concepts/`)"
+    20-wiki/resumes:  "Résumés de sources (`20-wiki/resumes/`)"
+
+log:
+  mode: file
+  path: log.md
+  operations: [ingest, ingest-rien, query, lint, move, init, mission]
+  entry:
+    labels: { created: "créé", modified: "modifié", note: "note" }
+    separator: " : "
+    one_line: true
+    as_links: true
+
+frozen:
+  - path: 10-raw
+    except: [10-raw/zotero, 10-raw/AGENTS.md]
+  - path: _meta/lint
+append_only: [_meta/manifest.jsonl]
+
+template_markers: ["{{", "<%"]
+
+orphans:
+  scope: [20-wiki, 50-missions]
+  ignore_links_from: [index.md, log.md]
+  ignore_links_from_types: [mission]
+  exempt_types: [mission]
+
+manifest:
+  file: _meta/manifest.jsonl
+  pipeline: ingest-v2
+  statuses: [integrated, no_material, error, superseded]
+
+protected:
+  - CLAUDE.md
+  - AGENTS.md
+  - .claude
+  - _meta
+  - 10-raw/zotero
+  - wikai.yaml
