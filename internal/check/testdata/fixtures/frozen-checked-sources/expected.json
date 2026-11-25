@@ -1,0 +1,7 @@
+[
+  {
+    "check": "sources",
+    "path": "10-raw/B.md",
+    "message": "10-raw/B.md:10: cited but not in sources: nowhere"
+  }
+]

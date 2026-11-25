@@ -23,9 +23,6 @@ func Sources(b *wiki.Base) []wiki.Finding {
 	}
 	var findings []wiki.Finding
 	for _, p := range b.Pages {
-		if p.Frozen {
-			continue
-		}
 		list, ok := p.Meta[c.Frontmatter].([]string)
 		if !ok {
 			continue
