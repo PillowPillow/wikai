@@ -181,7 +181,7 @@ func percentDecode(s string) string {
 func escapeMarkdownPath(path string, angle bool) string {
 	var b strings.Builder
 	for _, r := range path {
-		escape := strings.ContainsRune("%#?<>", r) || !angle && (r == '(' || r == ')' || unicode.IsSpace(r))
+		escape := strings.ContainsRune("%#?<>:", r) || !angle && (r == '(' || r == ')' || unicode.IsSpace(r))
 		if !escape {
 			b.WriteRune(r)
 			continue

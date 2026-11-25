@@ -43,6 +43,7 @@ func newRoot(env Env) *cobra.Command {
 	root.PersistentFlags().String("dir", "", "wiki folder (default: current folder)")
 	root.AddCommand(newCheck(env))
 	root.AddCommand(newNew(env))
+	root.AddCommand(newMove(env))
 	return root
 }
 

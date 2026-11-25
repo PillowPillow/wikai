@@ -97,12 +97,13 @@ func TestRewriteMarkdownKeepsQueryTitleAndBrackets(t *testing.T) {
 }
 
 func TestRewriteMarkdownRoundTrip(t *testing.T) {
-	odd := "dir (1)/50% #a?b<c>.md"
-	for _, text := range []string{"[a](old.md#s \"t\")\n", "[a](<old.md>)\n"} {
-		got := RewriteLinks("markdown", text, func(Link) (string, bool) { return odd, true })
-		links := Links("markdown", got)
-		if len(links) != 1 || links[0].Target != odd || links[0].Unparsed {
-			t.Errorf("%q → %q → %+v", text, got, links)
+	for _, odd := range []string{"dir (1)/50% #a?b<c>.md", "Re: x.md"} {
+		for _, text := range []string{"[a](old.md#s \"t\")\n", "[a](<old.md>)\n"} {
+			got := RewriteLinks("markdown", text, func(Link) (string, bool) { return odd, true })
+			links := Links("markdown", got)
+			if len(links) != 1 || links[0].Target != odd || links[0].Unparsed || links[0].External {
+				t.Errorf("%q → %q → %+v", text, got, links)
+			}
 		}
 	}
 }
