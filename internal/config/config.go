@@ -261,8 +261,10 @@ func (c *Config) buildTypes() error {
 				return fmt.Errorf("kind %s is declared in types %s and %s", kn, prev, name)
 			}
 			owner[kn] = name
-			if err := checkPath(fmt.Sprintf("types.%s.kinds.%s.folder", name, kn), k.Folder); err != nil {
-				return err
+			if k.Folder != "" {
+				if err := checkPath(fmt.Sprintf("types.%s.kinds.%s.folder", name, kn), k.Folder); err != nil {
+					return err
+				}
 			}
 			if err := checkRules(fmt.Sprintf("types.%s.kinds.%s.frontmatter", name, kn), k.Frontmatter); err != nil {
 				return err
@@ -381,7 +383,7 @@ func oneOf(key, value string, allowed ...string) error {
 
 func checkPath(key, p string) error {
 	if p == "" {
-		return nil
+		return fmt.Errorf("%s: path must not be empty", key)
 	}
 	if path.IsAbs(p) || strings.Contains(p, `\`) || slices.Contains(strings.Split(p, "/"), "..") {
 		return fmt.Errorf("%s: %q must be relative and hold no \"..\"", key, p)

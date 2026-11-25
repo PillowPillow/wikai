@@ -107,52 +107,64 @@ func TestLoadRejects(t *testing.T) {
 		t.Fatal(err)
 	}
 	base := string(home)
-	cases := map[string]struct{ edit, want string }{
-		"unknown key":       {"colour: blue\n", "colour"},
-		"unknown nested":    {"index: {file: i.md, colour: blue}\n", "colour"},
-		"duplicate key":     {"root: a\n", "root"},
-		"version 2":         {"version: 2\n", "expects version 1, found 2"},
-		"version missing":   {"", "expects version 1, found none"},
-		"version text":      {"version: x\n", "expects version 1, found x"},
-		"links":             {"links: html\n", "links"},
-		"locale":            {"locale: de\n", "locale"},
-		"title":             {"title: h2\n", "title"},
-		"format":            {"frontmatter: {x: {format: regex}}\n", "format"},
-		"type format":       {"types: {a: {frontmatter: {x: {format: regex}}}}\n", "format"},
-		"log mode":          {"log: {mode: db, path: l}\n", "mode"},
-		"log path":          {"log: {mode: dir}\n", "log.path"},
-		"other_links":       {"index: {file: i.md, other_links: x}\n", "other_links"},
-		"index file":        {"index: {check: true}\n", "index.file"},
-		"groups":            {"index: {file: i.md, groups: tree}\n", "groups"},
-		"root dotdot":       {"root: ../x\n", "root"},
-		"root absolute":     {"root: /x\n", "root"},
-		"ignore dotdot":     {"ignore: [a/../../b]\n", "ignore"},
-		"folders absolute":  {"types: {a: {folders: [/x]}}\n", "folders"},
-		"kind folder":       {"types: {a: {kinds: {k: {folder: ../x}}}}\n", "folder"},
-		"frozen path":       {"frozen: [{path: ../x}]\n", "frozen"},
-		"protected":         {"protected: [../x]\n", "protected"},
-		"append_only":       {"append_only: [/x]\n", "append_only"},
-		"skeletons":         {"skeletons: ../s\n", "skeletons"},
-		"manifest file":     {"manifest: {file: ../m}\n", "manifest.file"},
-		"manifest required": {"manifest: {pipeline: p}\n", "manifest.file"},
-		"kind unique":       {"types: {a: {kinds: {k: {}}}, b: {kinds: {k: {}}}}\n", "kind k"},
-		"kind vs type":      {"types: {term: {}, a: {kinds: {term: {}}}}\n", "kind term"},
+	set := func(edit string) func(string) string {
+		return func(b string) string { return replaceTopLevel(b, edit) }
+	}
+	cases := map[string]struct {
+		mutate func(string) string
+		want   string
+	}{
+		"unknown key":      {set("colour: blue\n"), "field colour not found"},
+		"unknown nested":   {set("index: {file: i.md, colour: blue}\n"), "field colour not found"},
+		"duplicate key":    {func(b string) string { return b + "root: a\n" }, "already defined"},
+		"version 2":        {set("version: 2\n"), "expects version 1, found 2"},
+		"version missing":  {func(b string) string { return strings.Replace(b, "version: 1\n", "", 1) }, "expects version 1, found none"},
+		"version text":     {set("version: x\n"), "expects version 1, found x"},
+		"links":            {set("links: html\n"), `links must be one of markdown, wikilink, found "html"`},
+		"locale":           {set("locale: de\n"), `locale must be one of en, fr, found "de"`},
+		"title":            {set("title: h2\n"), `title must be one of heading, filename, found "h2"`},
+		"format":           {set("frontmatter: {x: {format: regex}}\n"), `frontmatter.x.format must be one of`},
+		"type format":      {set("types: {a: {frontmatter: {x: {format: regex}}}}\n"), `types.a.frontmatter.x.format must be one of`},
+		"log mode":         {set("log: {mode: db, path: l}\n"), `log.mode must be one of dir, file, found "db"`},
+		"log path":         {set("log: {mode: dir}\n"), "log.path is required"},
+		"other_links":      {set("index: {file: i.md, other_links: x}\n"), `index.other_links must be one of forbid, allow, found "x"`},
+		"index file":       {set("index: {check: true}\n"), "index.file is required"},
+		"groups":           {set("index: {file: i.md, groups: tree}\n"), `index.groups must be "folder"`},
+		"root dotdot":      {set("root: ../x\n"), `root: "../x" must be relative`},
+		"root absolute":    {set("root: /x\n"), `root: "/x" must be relative`},
+		"ignore dotdot":    {set("ignore: [a/../../b]\n"), `ignore: "a/../../b" must be relative`},
+		"folders absolute": {set("types: {a: {folders: [/x]}}\n"), `types.a.folders: "/x" must be relative`},
+		"kind folder":      {set("types: {a: {kinds: {k: {folder: ../x}}}}\n"), `types.a.kinds.k.folder: "../x" must be relative`},
+		"frozen path":      {set("frozen: [{path: ../x}]\n"), `frozen.path: "../x" must be relative`},
+		"frozen except":    {set("frozen: [{path: a, except: [../x]}]\n"), `frozen.except: "../x" must be relative`},
+		"protected":        {set("protected: [../x]\n"), `protected: "../x" must be relative`},
+		"append_only":      {set("append_only: [/x]\n"), `append_only: "/x" must be relative`},
+		"skeletons":        {set("skeletons: ../s\n"), `skeletons: "../s" must be relative`},
+		"manifest file":    {set("manifest: {file: ../m}\n"), `manifest.file: "../m" must be relative`},
+		"manifest missing": {set("manifest: {pipeline: p}\n"), "manifest.file is required"},
+		"kind unique":      {set("types: {a: {kinds: {k: {}}}, b: {kinds: {k: {}}}}\n"), "kind k is declared in types a and b"},
+		"kind vs type":     {set("types: {term: {}, a: {kinds: {term: {}}}}\n"), "kind term is declared in types a and term"},
+		"frozen no path":   {set("frozen: [{checked: false}]\n"), "frozen.path: path must not be empty"},
+		"frozen empty":     {set("frozen: [{path: \"\"}]\n"), "frozen.path: path must not be empty"},
+		"except empty":     {set("frozen: [{path: a, except: [\"\"]}]\n"), "frozen.except: path must not be empty"},
+		"ignore empty":     {set("ignore: [\"\"]\n"), "ignore: path must not be empty"},
+		"protected empty":  {set("protected: [\"\"]\n"), "protected: path must not be empty"},
+		"append empty":     {set("append_only: [\"\"]\n"), "append_only: path must not be empty"},
+		"unchecked empty":  {set("unchecked_frontmatter: [\"\"]\n"), "unchecked_frontmatter: path must not be empty"},
+		"folders empty":    {set("types: {a: {folders: [\"\"]}}\n"), "types.a.folders: path must not be empty"},
+		"include empty":    {set("index: {file: i.md, include: [\"\"]}\n"), "index.include: path must not be empty"},
+		"scope empty":      {set("orphans: {scope: [\"\"]}\n"), "orphans.scope: path must not be empty"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			src := replaceTopLevel(base, tc.edit)
-			if name == "version missing" {
-				src = strings.Replace(base, "version: 1\n", "", 1)
-			}
-			if name == "duplicate key" {
-				src = base + tc.edit
-			}
-			_, err := Load(writeFile(t, "wikai.yaml", src))
+			file := writeFile(t, "wikai.yaml", tc.mutate(base))
+			_, err := Load(file)
 			if err == nil {
 				t.Fatal("expected an error")
 			}
-			if !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("error %q does not contain %q", err, tc.want)
+			msg := strings.TrimPrefix(err.Error(), file+": ")
+			if !strings.Contains(msg, tc.want) {
+				t.Fatalf("error %q does not contain %q", msg, tc.want)
 			}
 		})
 	}
