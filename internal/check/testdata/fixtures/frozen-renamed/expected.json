@@ -1,0 +1,7 @@
+[
+  {
+    "check": "frozen",
+    "path": "10-raw/a.md",
+    "message": "frozen file deleted"
+  }
+]

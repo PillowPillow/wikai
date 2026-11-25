@@ -97,3 +97,25 @@ func TestCheckBaseFlagInRepo(t *testing.T) {
 		t.Fatalf("code=%d out=%q err=%q", code, out, errOut)
 	}
 }
+
+func TestCheckBaseFlag(t *testing.T) {
+	dir := testrepo.New(t, map[string]string{
+		"wikai.yaml":                         "version: 1\nroot: knowledge\nstray: false\nfrozen:\n  - path: log\n    checked: false\n",
+		"knowledge/log/2026-01-01-init-x.md": "- 2026-01-01: created.\n",
+	})
+	testrepo.Write(t, dir, map[string]string{"knowledge/log/2026-01-01-init-x.md": "- 2026-01-01: rewritten.\n"})
+	testrepo.Git(t, dir, "add", "-A")
+	testrepo.Git(t, dir, "commit", "-q", "-m", "modify")
+
+	if code, out, errOut := run(t, dir, "check"); code != 0 {
+		t.Fatalf("default base: code=%d out=%q err=%q", code, out, errOut)
+	}
+	code, out, _ := run(t, dir, "check", "--base", "HEAD~1")
+	if code != 1 || !strings.Contains(out, "frozen: knowledge/log/2026-01-01-init-x.md: frozen file modified") {
+		t.Fatalf("HEAD~1: code=%d out=%q", code, out)
+	}
+	code, _, errOut := run(t, dir, "check", "--base", "nope")
+	if code != 2 || !strings.Contains(errOut, `cannot read git ref "nope"`) {
+		t.Fatalf("nope: code=%d err=%q", code, errOut)
+	}
+}

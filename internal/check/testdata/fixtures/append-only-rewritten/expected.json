@@ -1,0 +1,7 @@
+[
+  {
+    "check": "frozen",
+    "path": "_meta/manifest.jsonl",
+    "message": "append-only file rewritten"
+  }
+]

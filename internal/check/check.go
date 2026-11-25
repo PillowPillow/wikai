@@ -31,7 +31,7 @@ func Run(b *wiki.Base, baseFlag string) (findings []wiki.Finding, warnings []str
 }
 
 func run(b *wiki.Base, checks []Check, baseFlag string) ([]wiki.Finding, []string, error) {
-	_, warnings, err := gitx.BaseRef(b.Boundary, b.Cfg.BaseBranch, baseFlag)
+	ref, warnings, err := gitx.BaseRef(b.Boundary, b.Cfg.BaseBranch, baseFlag)
 	if err != nil {
 		return nil, warnings, err
 	}
@@ -39,6 +39,11 @@ func run(b *wiki.Base, checks []Check, baseFlag string) ([]wiki.Finding, []strin
 	for _, c := range checks {
 		findings = append(findings, c.Run(b)...)
 	}
+	frozen, err := Frozen(b, ref)
+	if err != nil {
+		return nil, warnings, err
+	}
+	findings = append(findings, frozen...)
 	slices.SortStableFunc(findings, func(x, y wiki.Finding) int {
 		return cmp.Or(cmp.Compare(x.Path, y.Path), cmp.Compare(x.Check, y.Check))
 	})

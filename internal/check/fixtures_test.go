@@ -20,6 +20,28 @@ func TestFixtures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var dirs int
+	for _, e := range entries {
+		if e.IsDir() {
+			dirs++
+		}
+	}
+	if dirs != 51 {
+		t.Errorf("fixture folder holds %d fixtures, want 51", dirs)
+	}
+	ported, err := os.ReadFile("testdata/ported.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := strings.Fields(string(ported))
+	if len(names) != 29 {
+		t.Errorf("ported.txt lists %d names, want 29", len(names))
+	}
+	for _, name := range names {
+		if _, err := os.Stat(filepath.Join("testdata/fixtures", name)); err != nil {
+			t.Errorf("ported fixture %s: %v", name, err)
+		}
+	}
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue

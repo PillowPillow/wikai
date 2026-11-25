@@ -47,6 +47,11 @@ func HasCommit(dir string) bool {
 	return err == nil
 }
 
+func VerifyRef(dir, ref string) error {
+	_, err := run(dir, "rev-parse", "--verify", "--quiet", ref+"^{commit}")
+	return err
+}
+
 func LsFiles(dir string) ([]string, error) {
 	out, err := run(dir, "ls-files", "-z")
 	if err != nil {
