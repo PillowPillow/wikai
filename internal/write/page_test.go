@@ -367,3 +367,55 @@ func TestNewPageVaultTitleLeavesFolder(t *testing.T) {
 		t.Fatalf("index changed")
 	}
 }
+
+func TestNewPageFlatIndexRuns(t *testing.T) {
+	dir := testrepo.New(t, map[string]string{
+		"wikai.yaml":            "version: 1\nroot: kb\ntypes:\n  note:\n    folders: [notes]\nindex:\n  file: index.md\n",
+		"kb/_skeletons/note.md": "# {{title}}\n",
+		"kb/index.md":           "# Index\n\n## Late\n\n- [m](notes/m.md) — m\n- [z](notes/z.md) — z\n\n## Early\n\n- [b](notes/b.md) — b\n- [d](notes/d.md) — d\n",
+		"kb/notes/z.md":         "# z\n",
+	})
+	b, _ := loadBase(t, dir)
+	if _, err := NewPage(b, PageOpts{Kind: "note", Title: "C", Summary: "c", Date: jan2}); err != nil {
+		t.Fatal(err)
+	}
+	want := "# Index\n\n## Late\n\n- [m](notes/m.md) — m\n- [z](notes/z.md) — z\n\n## Early\n\n- [b](notes/b.md) — b\n- [C](notes/c.md) — c\n- [d](notes/d.md) — d\n"
+	if got := read(t, dir, "kb/index.md"); got != want {
+		t.Fatalf("index = %q", got)
+	}
+	b, _ = loadBase(t, dir)
+	if _, err := NewPage(b, PageOpts{Kind: "note", Title: "Zz", Summary: "c", Date: jan2}); err != nil {
+		t.Fatal(err)
+	}
+	want = "# Index\n\n## Late\n\n- [m](notes/m.md) — m\n- [z](notes/z.md) — z\n\n## Early\n\n- [b](notes/b.md) — b\n- [C](notes/c.md) — c\n- [d](notes/d.md) — d\n- [Zz](notes/zz.md) — c\n"
+	if got := read(t, dir, "kb/index.md"); got != want {
+		t.Fatalf("index = %q", got)
+	}
+}
+
+func TestNewPageUnmatchedGroup(t *testing.T) {
+	cfg := "version: 1\nroot: kb\ntypes:\n  note:\n    folders: [notes, other]\n    kinds:\n      note: {}\n      misc: { folder: other }\nindex:\n  file: index.md\n  check: %s\n  groups:\n    notes: Notes\n"
+	files := func(check string) map[string]string {
+		return map[string]string{
+			"wikai.yaml":            strings.Replace(cfg, "%s", check, 1),
+			"kb/_skeletons/note.md": "# {{title}}\n",
+			"kb/_skeletons/misc.md": "# {{title}}\n",
+			"kb/index.md":           "# Index\n\n## Notes\n\nNo page.\n",
+		}
+	}
+	dir := testrepo.New(t, files("true"))
+	b, _ := loadBase(t, dir)
+	_, err := NewPage(b, PageOpts{Kind: "misc", Title: "M", Summary: "s", Date: jan2})
+	if err == nil || exit.Code(err) != 2 || err.Error() != "no index group for other/: add it to index.groups" {
+		t.Fatalf("err = %v", err)
+	}
+	if exists(dir, "kb/other/m.md") || read(t, dir, "kb/index.md") != "# Index\n\n## Notes\n\nNo page.\n" {
+		t.Fatal("something written")
+	}
+	dir = testrepo.New(t, files("false"))
+	b, _ = loadBase(t, dir)
+	p, err := NewPage(b, PageOpts{Kind: "misc", Title: "M", Summary: "s", Date: jan2})
+	if err != nil || !exists(dir, p) || read(t, dir, "kb/index.md") != "# Index\n\n## Notes\n\nNo page.\n" {
+		t.Fatalf("%q %v", p, err)
+	}
+}

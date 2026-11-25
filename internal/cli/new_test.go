@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,6 +74,50 @@ func TestNewPageCLIUsage(t *testing.T) {
 			t.Errorf("%s: page written", name)
 		}
 	}
+}
+
+func TestNewPageCLITitleLeavesFolder(t *testing.T) {
+	dir := newHome(t)
+	testrepo.Write(t, dir, map[string]string{"wikai.yaml": strings.Replace(readFile(t, filepath.Join(dir, "wikai.yaml")), `name: "adr-{date:compact}-{slug}"`, `name: "{title}"`, 1) + "\n"})
+	testrepo.Write(t, dir, map[string]string{"knowledge/_skeletons/decision.md": "# {{title}}\n"})
+	before := listFiles(t, dir)
+	index := readFile(t, filepath.Join(dir, "knowledge/index.md"))
+	for _, title := range []string{"a/b", "../x", `a\b`} {
+		code, out, errOut := run(t, dir, "new", "page", "decision", title, "--summary", "x")
+		if code != 2 || out != "" {
+			t.Errorf("%q: code=%d out=%q err=%q", title, code, out, errOut)
+		}
+	}
+	if after := listFiles(t, dir); strings.Join(after, "\n") != strings.Join(before, "\n") {
+		t.Fatalf("files changed:\nbefore %v\nafter %v", before, after)
+	}
+	if got := readFile(t, filepath.Join(dir, "knowledge/index.md")); got != index {
+		t.Fatalf("index changed: %q", got)
+	}
+}
+
+func readFile(t *testing.T, p string) string {
+	t.Helper()
+	data, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+func listFiles(t *testing.T, dir string) []string {
+	t.Helper()
+	var out []string
+	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			out = append(out, p)
+		}
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
 }
 
 func TestNewPageCLIRefused(t *testing.T) {

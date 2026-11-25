@@ -22,22 +22,44 @@ func Indexed(b *wiki.Base, pagePath string) bool {
 	return ok
 }
 
-func indexGroup(b *wiki.Base, pagePath string) (heading string, flat, ok bool) {
+// Root-relative folder of the page, and whether index.include covers it.
+func indexDir(b *wiki.Base, pagePath string) (string, bool) {
 	idx := b.Cfg.Index
 	if idx == nil {
-		return "", false, false
+		return "", false
 	}
 	pagePath = nfc(pagePath)
 	if !slices.ContainsFunc(idx.Include, func(f string) bool { return inDir(pagePath, nfc(b.Cfg.RootPath(f))) }) {
-		return "", false, false
+		return "", false
 	}
 	dir := path.Dir(pagePath)
 	if b.Cfg.Root != "." {
 		rel, found := strings.CutPrefix(dir, b.Cfg.Root)
 		if !found || rel != "" && rel[0] != '/' {
-			return "", false, false
+			return "", false
 		}
 		dir = path.Clean(strings.TrimPrefix(rel, "/"))
+	}
+	return dir, true
+}
+
+// Usage error when the index is checked and the page is included but no group applies.
+func RequireGroup(b *wiki.Base, pagePath string) error {
+	dir, included := indexDir(b, pagePath)
+	if included && b.Cfg.Index.Check && !Indexed(b, pagePath) {
+		return exit.Usage("no index group for %s/: add it to index.groups", dir)
+	}
+	return nil
+}
+
+func indexGroup(b *wiki.Base, pagePath string) (heading string, flat, ok bool) {
+	idx := b.Cfg.Index
+	if idx == nil {
+		return "", false, false
+	}
+	dir, included := indexDir(b, pagePath)
+	if !included {
+		return "", false, false
 	}
 	switch {
 	case idx.Groups.ByFolder:
@@ -117,7 +139,7 @@ func sameTarget(b *wiki.Base, indexPath, target, pagePath string) bool {
 	return nfc(path.Join(path.Dir(indexPath), target)) == nfc(pagePath)
 }
 
-func rewriteIndex(b *wiki.Base, index, pagePath string, change func(entries []string) []string) (string, error) {
+func rewriteIndex(b *wiki.Base, index, pagePath, newTarget string, change func(entries []string) []string) (string, error) {
 	heading, flat, ok := indexGroup(b, pagePath)
 	if !ok {
 		return index, nil
@@ -128,7 +150,7 @@ func rewriteIndex(b *wiki.Base, index, pagePath string, change func(entries []st
 		lines = nil
 	}
 	if flat {
-		return rewriteFlat(style, lines, change), nil
+		return rewriteFlat(b, lines, pagePath, newTarget, change), nil
 	}
 	start := slices.Index(lines, "## "+heading)
 	if start < 0 {
@@ -168,41 +190,57 @@ func rewriteIndex(b *wiki.Base, index, pagePath string, change func(entries []st
 	return strings.Join(out, "\n") + "\n", nil
 }
 
-func rewriteFlat(style string, lines []string, change func([]string) []string) string {
-	var entries []string
-	last := -1
+func rewriteFlat(b *wiki.Base, lines []string, pagePath, newTarget string, change func([]string) []string) string {
+	style := b.Cfg.Links
+	var runs [][2]int
 	for i, l := range lines {
-		if _, ok := entryTarget(style, l); ok {
-			entries = append(entries, l)
-			last = i
+		if _, ok := entryTarget(style, l); !ok {
+			continue
 		}
-	}
-	sorted := sortEntries(style, change(entries))
-	var out []string
-	next := 0
-	for i, l := range lines {
-		if _, ok := entryTarget(style, l); ok {
-			if next < len(sorted) {
-				out = append(out, sorted[next])
-				next++
-			}
+		if n := len(runs); n > 0 && runs[n-1][1] == i {
+			runs[n-1][1] = i + 1
 		} else {
-			out = append(out, l)
-		}
-		if i == last {
-			out = append(out, sorted[next:]...)
-			next = len(sorted)
+			runs = append(runs, [2]int{i, i + 1})
 		}
 	}
-	if last < 0 {
+	if len(runs) == 0 {
+		out := slices.Clone(lines)
 		for len(out) > 0 && out[len(out)-1] == "" {
 			out = out[:len(out)-1]
 		}
 		if len(out) > 0 {
 			out = append(out, "")
 		}
-		out = append(out, sorted...)
+		out = append(out, sortEntries(style, change(nil))...)
+		return strings.Join(out, "\n") + "\n"
 	}
+	chosen := len(runs) - 1
+	found := false
+	for r, run := range runs {
+		for _, l := range lines[run[0]:run[1]] {
+			if t, _ := entryTarget(style, l); sameTarget(b, b.IndexPath(), t, pagePath) {
+				chosen, found = r, true
+			}
+		}
+		if found {
+			break
+		}
+	}
+	if !found && newTarget != "" {
+		key := sortKey(style, newTarget)
+		for r, run := range runs {
+			first, _ := entryTarget(style, lines[run[0]])
+			last, _ := entryTarget(style, lines[run[1]-1])
+			if sortKey(style, first) <= key && key <= sortKey(style, last) {
+				chosen = r
+				break
+			}
+		}
+	}
+	run := runs[chosen]
+	out := slices.Clone(lines[:run[0]])
+	out = append(out, sortEntries(style, change(slices.Clone(lines[run[0]:run[1]])))...)
+	out = append(out, lines[run[1]:]...)
 	return strings.Join(out, "\n") + "\n"
 }
 
@@ -221,11 +259,15 @@ func IndexAdd(b *wiki.Base, index, pagePath, title, summary string) (string, err
 	if s := strings.Join(strings.Fields(summary), " "); s != "" {
 		line += " — " + s
 	}
-	return rewriteIndex(b, index, pagePath, func(entries []string) []string { return append(entries, line) })
+	newTarget := relPath(path.Dir(b.IndexPath()), pagePath)
+	if b.Cfg.Links == "wikilink" {
+		newTarget = strings.TrimSuffix(path.Base(pagePath), ".md")
+	}
+	return rewriteIndex(b, index, pagePath, newTarget, func(entries []string) []string { return append(entries, line) })
 }
 
 func IndexRemove(b *wiki.Base, index, pagePath string) (string, error) {
-	return rewriteIndex(b, index, pagePath, func(entries []string) []string {
+	return rewriteIndex(b, index, pagePath, "", func(entries []string) []string {
 		return slices.DeleteFunc(entries, func(l string) bool {
 			t, _ := entryTarget(b.Cfg.Links, l)
 			return sameTarget(b, b.IndexPath(), t, pagePath)
@@ -234,5 +276,5 @@ func IndexRemove(b *wiki.Base, index, pagePath string) (string, error) {
 }
 
 func IndexResort(b *wiki.Base, index, pagePath string) (string, error) {
-	return rewriteIndex(b, index, pagePath, func(entries []string) []string { return entries })
+	return rewriteIndex(b, index, pagePath, "", func(entries []string) []string { return entries })
 }

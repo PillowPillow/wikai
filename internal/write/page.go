@@ -100,6 +100,9 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 	text = fillDates(text, requiredDates(b.Cfg, o.Kind), date)
 	text = fillEmptySections(text, Locale(b.Cfg.Locale).EmptySection)
 
+	if err := RequireGroup(b, pagePath); err != nil {
+		return "", err
+	}
 	var index, indexDisk string
 	if Indexed(b, pagePath) {
 		indexDisk = filepath.Join(b.Boundary, filepath.FromSlash(b.IndexPath()))
