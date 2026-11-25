@@ -1,0 +1,7 @@
+[
+  {
+    "check": "sources",
+    "path": "knowledge/repos/example-backend.md",
+    "message": "code citation without a line range: example-backend@1a2b3c4:a.md"
+  }
+]

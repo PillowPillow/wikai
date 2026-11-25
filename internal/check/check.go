@@ -21,6 +21,8 @@ func All() []Check {
 		{"index", Index},
 		{"duplicates", Duplicates},
 		{"orphans", Orphans},
+		{"sources", Sources},
+		{"templates", Templates},
 	}
 }
 

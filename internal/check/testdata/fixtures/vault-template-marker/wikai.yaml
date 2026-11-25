@@ -1,0 +1,22 @@
+version: 1
+root: .
+title: filename
+links: wikilink
+stray: false
+
+frontmatter:
+  type:    { required: true }
+  created: { required: true, format: date }
+  updated: { required: true, format: date }
+  sources: { required: true, format: list }
+
+types:
+  wiki:
+    folders: [20-wiki]
+  raw:
+    folders: [10-raw]
+
+frozen:
+  - path: 10-raw
+
+template_markers: ["{{", "<%"]
