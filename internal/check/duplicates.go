@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/PillowPillow/wikai/internal/wiki"
-	"golang.org/x/text/unicode/norm"
 )
 
 func Duplicates(b *wiki.Base) []wiki.Finding {
@@ -18,7 +17,7 @@ func Duplicates(b *wiki.Base) []wiki.Finding {
 			}
 			continue
 		}
-		for _, name := range pageNames(p) {
+		for _, name := range wiki.Names(p) {
 			if owners[name] == nil {
 				owners[name] = map[string]bool{}
 			}
@@ -40,27 +39,4 @@ func Duplicates(b *wiki.Base) []wiki.Finding {
 		}
 	}
 	return findings
-}
-
-func pageNames(p *wiki.Page) []string {
-	raw := []string{p.Title}
-	switch a := p.Meta["aliases"].(type) {
-	case string:
-		raw = append(raw, a)
-	case []string:
-		raw = append(raw, a...)
-	case []any:
-		for _, v := range a {
-			if s, ok := v.(string); ok {
-				raw = append(raw, s)
-			}
-		}
-	}
-	var names []string
-	for _, n := range raw {
-		if n = strings.ToLower(norm.NFC.String(strings.TrimSpace(n))); n != "" {
-			names = append(names, n)
-		}
-	}
-	return names
 }
