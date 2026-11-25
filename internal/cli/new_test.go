@@ -127,3 +127,22 @@ func TestNewPageCLIRefused(t *testing.T) {
 		t.Fatalf("code=%d err=%q", code, errOut)
 	}
 }
+
+func TestNewLogCLI(t *testing.T) {
+	dir := newHome(t)
+	code, out, errOut := run(t, filepath.Join(dir, "knowledge", "glossary"), "new", "log", "ingest", "Billing", "--created", "offer.md", "--modified", "../index.md", "--note", "n", "--date", "2026-01-02")
+	if code != 0 || out != "created knowledge/log/2026-01-02-ingest-billing.md\n" || errOut != "" {
+		t.Fatalf("code=%d out=%q err=%q", code, out, errOut)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "knowledge/log/2026-01-02-ingest-billing.md"))
+	want := "## [2026-01-02] ingest | Billing\n- created: knowledge/glossary/offer.md\n- modified: knowledge/index.md\n- note: n\n"
+	if err != nil || string(data) != want {
+		t.Fatalf("%q %v", data, err)
+	}
+	if code, _, _ := run(t, dir, "new", "log", "ingest", "Billing", "--note", "n", "--date", "2026-01-02"); code != 1 {
+		t.Fatalf("code=%d", code)
+	}
+	if code, _, _ := run(t, dir, "new", "log", "ingest", "X", "--created", "../../outside.md"); code != 2 {
+		t.Fatalf("code=%d", code)
+	}
+}

@@ -29,6 +29,7 @@ func newNew(env Env) *cobra.Command {
 		RunE:  func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 	}
 	cmd.AddCommand(newNewPage(env))
+	cmd.AddCommand(newNewLog(env))
 	return cmd
 }
 
@@ -77,5 +78,63 @@ func newNewPage(env Env) *cobra.Command {
 	cmd.Flags().StringVar(&date, "date", "", "date YYYY-MM-DD (default: today)")
 	cmd.Flags().StringArrayVar(&sets, "set", nil, "fill {{key}} in the skeleton, as key=value")
 	_ = cmd.MarkFlagRequired("summary")
+	return cmd
+}
+
+func newNewLog(env Env) *cobra.Command {
+	var slug, date string
+	var created, modified, notes []string
+	cmd := &cobra.Command{
+		Use:   "log <operation> <title>",
+		Short: "Write a log entry",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			day := env.Now()
+			if date != "" {
+				var err error
+				if day, err = parseDate(date); err != nil {
+					return err
+				}
+			}
+			b, err := loadBase(env, cmd)
+			if err != nil {
+				return err
+			}
+			resolve := func(args []string) ([]string, error) {
+				var out []string
+				for _, a := range args {
+					p, err := b.Rel(env.Dir, a)
+					if err != nil {
+						return nil, err
+					}
+					out = append(out, p)
+				}
+				return out, nil
+			}
+			c, err := resolve(created)
+			if err != nil {
+				return err
+			}
+			m, err := resolve(modified)
+			if err != nil {
+				return err
+			}
+			p, err := write.NewLog(b, write.LogOpts{Operation: args[0], Title: args[1], Slug: slug, Created: c, Modified: m, Notes: notes, Date: day})
+			if err != nil {
+				return err
+			}
+			if b.Cfg.Log.Mode == "file" {
+				fmt.Fprintf(env.Stdout, "appended to %s\n", p)
+			} else {
+				fmt.Fprintf(env.Stdout, "created %s\n", p)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&slug, "slug", "", "slug used in the file name (default: from the title)")
+	cmd.Flags().StringVar(&date, "date", "", "date YYYY-MM-DD (default: today)")
+	cmd.Flags().StringArrayVar(&created, "created", nil, "path of a created file")
+	cmd.Flags().StringArrayVar(&modified, "modified", nil, "path of a modified file")
+	cmd.Flags().StringArrayVar(&notes, "note", nil, "free note")
 	return cmd
 }
