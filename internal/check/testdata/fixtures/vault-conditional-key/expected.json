@@ -1,0 +1,7 @@
+[
+  {
+    "check": "frontmatter",
+    "path": "20-wiki/entities/Example Tool.md",
+    "message": "missing key: entity_kind"
+  }
+]

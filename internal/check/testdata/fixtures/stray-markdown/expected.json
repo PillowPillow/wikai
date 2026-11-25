@@ -1,0 +1,12 @@
+[
+  {
+    "check": "stray",
+    "path": "knowledge/runbooks/deploy.md",
+    "message": "markdown file outside the page folders"
+  },
+  {
+    "check": "stray",
+    "path": "knowledge/notes.md",
+    "message": "markdown file outside the page folders"
+  }
+]

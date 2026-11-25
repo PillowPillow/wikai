@@ -1,0 +1,7 @@
+[
+  {
+    "check": "frontmatter",
+    "path": "knowledge/glossary/contract.md",
+    "message": "type must be term in glossary/"
+  }
+]

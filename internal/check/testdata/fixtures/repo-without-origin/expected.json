@@ -1,0 +1,7 @@
+[
+  {
+    "check": "frontmatter",
+    "path": "knowledge/repos/example-backend.md",
+    "message": "missing key: origin"
+  }
+]
