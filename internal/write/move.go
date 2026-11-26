@@ -60,6 +60,9 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 	if reserved(b, dest) {
 		return MoveResult{}, exit.Refused("%s is the index, the log, a skeleton or an ignored path", dest)
 	}
+	if err := folderSpelling(b, dest); err != nil {
+		return MoveResult{}, err
+	}
 	if info, err := os.Lstat(diskPath(b, dest)); err == nil && !caseRename(b, old, dest, info) {
 		return MoveResult{}, exit.Refused("%s exists", dest)
 	}
@@ -160,6 +163,34 @@ func diskPath(b *wiki.Base, p string) string {
 func caseRename(b *wiki.Base, old, dest string, destInfo fs.FileInfo) bool {
 	oldInfo, err := os.Lstat(diskPath(b, old))
 	return err == nil && old != dest && os.SameFile(oldInfo, destInfo)
+}
+
+// Rules match folders case-folded, so a case variant of an existing folder passes them and then fails check.
+func folderSpelling(b *wiki.Base, dest string) error {
+	dir := "."
+	for _, seg := range strings.Split(path.Dir(dest), "/") {
+		if seg == "." {
+			break
+		}
+		entries, err := os.ReadDir(diskPath(b, dir))
+		if err != nil {
+			return nil
+		}
+		disk := ""
+		for _, e := range entries {
+			if name := nfc(e.Name()); name == seg {
+				disk = ""
+				break
+			} else if e.IsDir() && strings.EqualFold(name, seg) {
+				disk = name
+			}
+		}
+		if disk != "" {
+			return exit.Usage("%s: the folder %s is spelled %s", dest, path.Join(dir, seg), path.Join(dir, disk))
+		}
+		dir = path.Join(dir, seg)
+	}
+	return nil
 }
 
 func wikiPath(b *wiki.Base, p string) string {

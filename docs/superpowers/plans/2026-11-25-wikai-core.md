@@ -943,7 +943,7 @@ func TestMoveCLIFromSubfolder(t *testing.T) { /* cwd knowledge/glossary: "move c
   func Append(file string, r Record) (line string, err error)   // file lock, returns the written line
   func (r Record) Line() string
   ```
-- CLI: `wikai manifest hash|status|append <note> [--status S] [--pages P...] [--note T]`. `hash` prints the digest. `status` prints `new`, `unchanged <status> <raw>` or `modified`. `append` prints the written line. `raw` is the boundary-relative path of the note. A nil `Manifest` block, a missing `--status` on `append`, or a status outside `statuses` are usage errors.
+- CLI: `wikai manifest hash|status|append <note> [--status S] [--pages P,...] [--note T]`. `hash` prints the digest. `status` prints `new`, `unchanged <status> <raw>` or `modified`. `append` prints the written line. `raw` is the boundary-relative path of the note. A nil `Manifest` block, a missing `--status` on `append`, or a status outside `statuses` are usage errors.
 
 `Normalize`, in this order (port of `manifest.py`; the edge behaviours are intended):
 
@@ -994,7 +994,7 @@ func TestStatus(t *testing.T) {
 func TestAppendConcurrent(t *testing.T) { /* 20 goroutines append; the file has 20 lines; each line parses as JSON */ }
 func TestManifestCLI(t *testing.T) {
     // "manifest append 10-raw/n.md" (no --status) → 2;  "--status nope" → 2
-    // "manifest append 10-raw/n.md --status integrated --pages A B --note ok" → 0, out is the line, the file ends with it
+    // "manifest append 10-raw/n.md --status integrated --pages A,B --note ok" → 0, out is the line, the file ends with it; "--pages A B --note ok" → 2
     // run from 10-raw: "manifest status n.md" → "unchanged integrated 10-raw/n.md"
     // a base without manifest block → 2
 }
@@ -1209,7 +1209,7 @@ Expected: `OK: <n> pages` twice, and `Total : 0 problème(s)` with `Notes contr�
   - `dev-home.yaml`: the same with `locale: fr`, `base_branch: master`, `citations.code: false`.
   - `brain.yaml`: `internal/config/testdata/brain.yaml`, completed from the tables of `~/Brain/_meta/scripts/health_check.py`: the `COMMON` keys go to the top-level `frontmatter`; each entry of `SCHEMA` becomes a type with its required keys and its `status` values; `KINDS` are the `kind` values; `NOT_CHECKED` and `RULE_FILES` give `ignore`; `WIKI_DIRS` gives `orphans.scope`; `RAW_EXEMPT` gives the `except` list. The Python script checks no date format: set `format: date` on a key only when the run stays clean.
 
-- [ ] **Step 3: Write `acceptance/run.sh`**: builds `./wikai`, then for each base runs `./wikai check --config "$WIKAI_ACCEPTANCE_CONFIGS/<name>.yaml" --dir <base path>`; base paths come from `WIKAI_BRAIN`, `WIKAI_AM_HOME`, `WIKAI_DEV_HOME` with the three default paths of the spec; the script exits non-zero when a run does, and when a config file is absent.
+- [ ] **Step 3: Write `acceptance/run.sh`**: builds `./wikai`, then for each base runs `./wikai check --config "$WIKAI_ACCEPTANCE_CONFIGS/<name>.yaml" --dir <base path>`; base paths come from `WIKAI_BRAIN`, `WIKAI_AM_HOME`, `WIKAI_DEV_HOME`, which are required and have no default; the script exits non-zero when a run does, and when a config file is absent.
 
 - [ ] **Step 4: Run** `sh acceptance/run.sh`. The criterion is strict: `OK: <n> pages` on the three bases, with the counts of Step 1, and zero finding. Sort every finding:
 

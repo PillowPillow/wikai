@@ -421,6 +421,20 @@ func TestMoveCaseOnlyRename(t *testing.T) {
 	}
 }
 
+func TestMoveRefusesAFolderSpelledInAnotherCase(t *testing.T) {
+	for _, c := range []struct{ old, new string }{
+		{"knowledge/glossary/billing.md", "knowledge/Glossary/fee.md"},
+		{"knowledge/glossary/billing.md", "knowledge/Archive/billing.md"},
+		{"knowledge/glossary/contract.md", "knowledge/Glossary/contract.md"},
+	} {
+		b, dir := homeRepo(t, nil)
+		_, err := Move(b, MoveOpts{Old: c.old, New: c.new, NoLog: true})
+		if exit.Code(err) != 2 || porcelain(t, dir) != "" {
+			t.Errorf("%s: err = %v, status = %q", c.new, err, porcelain(t, dir))
+		}
+	}
+}
+
 func TestMoveVaultLogLinksTheMovedPageWhenItsNameIsShared(t *testing.T) {
 	b, dir := vaultRepo(t, map[string]string{
 		"20-wiki/Note.md":               "---\ntype: wiki\n---\n",

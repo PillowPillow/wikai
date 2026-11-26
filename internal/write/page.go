@@ -67,7 +67,7 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 		return "", exit.Usage("the page name %q is not a file name", name)
 	}
 	if breaksWikilink(b.Cfg.Links, name) {
-		return "", exit.Refused(wikilinkNameMsg, name)
+		return "", exit.Usage(wikilinkNameMsg, name)
 	}
 	pagePath := nfc(path.Join(b.Cfg.RootPath(kind.Folder), name+".md"))
 	disk := filepath.Join(b.Boundary, filepath.FromSlash(pagePath))
