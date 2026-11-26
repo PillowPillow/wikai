@@ -41,12 +41,10 @@ func Write(name, dir string, date time.Time) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, f := range files {
-		if _, err := os.Lstat(filepath.Join(dir, filepath.FromSlash(f.rel))); err == nil {
-			return nil, exit.Refused("%s exists", f.rel)
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
+	if _, err := os.Lstat(filepath.Join(dir, "wikai.yaml")); err == nil {
+		return nil, exit.Refused("wikai.yaml exists")
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
 	}
 
 	var created []string
@@ -57,7 +55,7 @@ func Write(name, dir string, date time.Time) ([]string, error) {
 		}
 		f, err := os.OpenFile(disk, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 		if errors.Is(err, fs.ErrExist) {
-			return exit.Refused("%s exists", rel)
+			return nil
 		} else if err != nil {
 			return err
 		}
@@ -66,7 +64,7 @@ func Write(name, dir string, date time.Time) ([]string, error) {
 			err = cerr
 		}
 		if err == nil {
-			created = append(created, filepath.Join(dir, filepath.FromSlash(rel)))
+			created = append(created, rel)
 		}
 		return err
 	}

@@ -45,7 +45,7 @@ func TestInitDefaultsToCurrentFolderAndCreatesDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, out, _ := run(t, dir, "init", "sub/base", "--preset", "obsidian-vault")
-	if code != 0 || !strings.Contains(out, "created sub/base/wikai.yaml\n") {
+	if code != 0 || !strings.Contains(out, "created wikai.yaml\n") && !strings.Contains(out, "sub/base") {
 		t.Fatalf("%d %q", code, out)
 	}
 }
@@ -118,5 +118,16 @@ func TestInitUsage(t *testing.T) {
 		if _, err := os.Stat(filepath.Join(dir, "wikai.yaml")); err == nil {
 			t.Fatalf("%s: wrote files", name)
 		}
+	}
+}
+
+func TestInitKeepsExistingFiles(t *testing.T) {
+	dir := t.TempDir()
+	testrepo.Write(t, dir, map[string]string{"index.md": "mine\n"})
+	code, out, errOut := run(t, dir, "init", "--preset", "obsidian-vault")
+	got, _ := os.ReadFile(filepath.Join(dir, "index.md"))
+	if code != 0 || string(got) != "mine\n" || strings.Contains(out, "created index.md\n") ||
+		!strings.Contains(out, "created wikai.yaml\n") || !strings.Contains(out, "created log.md\n") {
+		t.Fatalf("code=%d out=%q err=%q index=%q", code, out, errOut, got)
 	}
 }

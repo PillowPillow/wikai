@@ -29,10 +29,7 @@ func newInit(env Env) *cobra.Command {
 			}
 			created, err := preset.Write(name, dir, env.Now())
 			for _, p := range created {
-				if rel, rerr := filepath.Rel(env.Dir, p); rerr == nil {
-					p = rel
-				}
-				fmt.Fprintf(env.Stdout, "created %s\n", filepath.ToSlash(p))
+				fmt.Fprintf(env.Stdout, "created %s\n", p)
 			}
 			return err
 		},

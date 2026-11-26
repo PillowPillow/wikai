@@ -81,3 +81,20 @@ func TestWriteUnknownPreset(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 }
+
+func TestWriteKeepsExistingFilesAndReturnsRelativePaths(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "log.md"), []byte("mine"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	created, err := Write("obsidian-vault", dir, day)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := os.ReadFile(filepath.Join(dir, "log.md")); string(got) != "mine" {
+		t.Fatalf("%q", got)
+	}
+	if slices.Contains(created, "log.md") || !slices.Contains(created, "wikai.yaml") || !slices.Contains(created, "_meta/skeletons/concept.md") {
+		t.Fatalf("%v", created)
+	}
+}
