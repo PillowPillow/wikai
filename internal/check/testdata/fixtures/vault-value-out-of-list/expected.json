@@ -1,0 +1,7 @@
+[
+  {
+    "check": "frontmatter",
+    "path": "20-wiki/concepts/Caching.md",
+    "message": "status must be one of draft, done, found \"later\""
+  }
+]

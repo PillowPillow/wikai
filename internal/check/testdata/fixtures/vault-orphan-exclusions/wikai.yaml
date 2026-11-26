@@ -1,0 +1,31 @@
+version: 1
+root: .
+title: filename
+links: wikilink
+stray: false
+unchecked_frontmatter: [00-inbox]
+
+frontmatter:
+  type:    { required: true }
+  created: { required: true, format: date }
+  updated: { required: true, format: date }
+  sources: { required: true, format: list }
+
+types:
+  wiki:
+    folders: [20-wiki]
+    frontmatter:
+      status:   { required: true, values: [draft, done] }
+      kind:     { required: true, values: [summary, concept, entity, comparison, answer] }
+      sources:  { required: true, format: list, non_empty: true }
+      reviewed: { required: true, format: date, empty_allowed: true }
+    kinds:
+      concept: { folder: 20-wiki/concepts, skeleton: wiki-concept, name: "{title}", set: { kind: concept } }
+  mission:
+    folders: [10-missions]
+
+index: { file: index.md, include: [20-wiki] }
+log: { mode: file, path: log.md }
+orphans:
+  ignore_links_from_types: [mission]
+  exempt_types: [mission]

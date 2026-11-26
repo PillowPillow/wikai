@@ -1,0 +1,7 @@
+[
+  {
+    "check": "index",
+    "path": "knowledge/glossary/contract.md",
+    "message": "page is not linked from the index"
+  }
+]

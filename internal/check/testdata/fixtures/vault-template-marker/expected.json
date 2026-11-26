@@ -1,0 +1,12 @@
+[
+  {
+    "check": "templates",
+    "path": "20-wiki/A.md",
+    "message": "template marker left: {{"
+  },
+  {
+    "check": "templates",
+    "path": "10-raw/C.md",
+    "message": "template marker left: {{"
+  }
+]

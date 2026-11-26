@@ -77,7 +77,7 @@ Everything below that is not in this list is the author's call and is open to co
 
 ## `wikai.yaml`
 
-The file sits at the root of the base (the git repository root for a home, the vault root for Brain). Its folder is the **boundary**: no link may leave it. A command finds the file by walking up from the current folder. `--config <file>` reads another file; `--dir <folder>` then names the boundary (default with `--config`: the current folder). Paths in the config and in the manifest are relative to the boundary. An unknown key is an error, not a warning.
+The file sits at the root of the base (the git repository root for a home, the vault root for Brain). Its folder is the **boundary**: no link may leave it. A command finds the file by walking up from the current folder. `--config <file>` reads another file; `--dir <folder>` then names the boundary (default with `--config`: the current folder). `root` and `protected` are relative to the boundary; every other path in the config is relative to `root`. Paths that `wikai` prints or records (findings, created files, the manifest `raw`) are relative to the boundary. Path arguments on the command line are resolved from the current folder. An unknown key is an error, not a warning.
 
 Example for a home:
 
@@ -261,7 +261,7 @@ or `OK: 148 pages`. `--json` prints the array `[{"check", "path", "message"}]`, 
 
 ### `wikai new page <kind> <title> --summary <text> [--slug S] [--date D] [--set key=value]...`
 
-1. Refuses when the file exists, or when the title is the title or an alias of another page (it names that page).
+1. Refuses when the file exists, when the new page's title (its file name under `title: filename`) is the title or an alias of another page (it names that page), or, with wikilink links, when another file has the same name.
 2. Copies the kind's skeleton and fills it: `{{title}}`, `{{date}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set`. Writes the `set` values of the kind. Fills required `date` keys left empty, except those marked `empty_allowed`. An empty section receives the empty-section text.
 3. Adds the index line.
 4. Prints the created path and the next steps (fill the sections, link the page, write the log entry).
@@ -274,7 +274,7 @@ Writes the entry described under `log`. Needs at least one `--created`, `--modif
 
 ### `wikai move <old> <new> [--no-log] [--note T]... [--date D]`
 
-Runs `git mv`, rewrites every link to the page in every page and in the index (markdown: the relative path; wikilink: the name, when the file name changes, keeping `|text` and `#anchor`), re-sorts the index group, and writes a `move` log entry. A move to a frozen path is an archive: the index line is removed. A move to the folder of another type is refused.
+Runs `git mv`, rewrites every link to the page in every page, in the index and in the log unless the log is frozen or append-only (markdown: the relative path; wikilink: the name, when the file name changes, keeping `|text` and `#anchor`), re-sorts the index group, and writes a `move` log entry. A move to a frozen path is an archive: the index line is removed. A move to the folder of another type is refused, and so are a move that would change a link in a checked frozen page and, when the index is checked, a move into a folder that has no index group. Links in frozen `checked: false` files are left as they are.
 
 ### `wikai manifest hash|status|append <note> [--status S] [--pages P...] [--note T]`
 

@@ -1,0 +1,12 @@
+[
+  {
+    "check": "duplicates",
+    "path": "knowledge/glossary/contract.md",
+    "message": "name shared with another page"
+  },
+  {
+    "check": "duplicates",
+    "path": "knowledge/repos/example-backend.md",
+    "message": "name shared with another page"
+  }
+]

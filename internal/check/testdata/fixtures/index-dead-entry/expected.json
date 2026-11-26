@@ -1,0 +1,7 @@
+[
+  {
+    "check": "index",
+    "path": "knowledge/index.md",
+    "message": "index link resolves to no page"
+  }
+]

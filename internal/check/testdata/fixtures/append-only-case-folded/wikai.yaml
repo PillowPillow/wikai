@@ -1,0 +1,14 @@
+version: 1
+root: .
+title: filename
+links: wikilink
+stray: false
+
+frontmatter:
+  type: { required: true }
+
+types:
+  wiki:
+    folders: [20-wiki]
+
+append_only: [_META/Manifest.jsonl]

@@ -1,0 +1,4 @@
+[
+  {"check": "duplicates", "path": "20-wiki/a/Note.md", "message": "name shared with another page: note"},
+  {"check": "duplicates", "path": "30-notes/note.md", "message": "name shared with another page: note"}
+]

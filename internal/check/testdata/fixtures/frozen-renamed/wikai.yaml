@@ -1,0 +1,19 @@
+version: 1
+root: .
+title: filename
+links: wikilink
+stray: false
+
+frontmatter:
+  type: { required: true }
+
+types:
+  wiki:
+    folders: [20-wiki]
+
+frozen:
+  - path: 10-raw
+    checked: false
+    except: [10-raw/zotero, 10-raw/AGENTS.md]
+
+append_only: [_meta/manifest.jsonl]

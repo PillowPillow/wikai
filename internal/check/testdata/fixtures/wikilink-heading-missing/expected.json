@@ -1,0 +1,7 @@
+[
+  {
+    "check": "links",
+    "path": "20-wiki/concepts/A.md",
+    "message": "anchor not found: B#Gone"
+  }
+]

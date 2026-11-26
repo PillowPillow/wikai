@@ -1,0 +1,7 @@
+[
+  {
+    "check": "orphans",
+    "path": "20-wiki/concepts/A.md",
+    "message": "no other page links to this page"
+  }
+]

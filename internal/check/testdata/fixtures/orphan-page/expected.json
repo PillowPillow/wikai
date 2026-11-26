@@ -1,0 +1,7 @@
+[
+  {
+    "check": "orphans",
+    "path": "knowledge/decisions/fact-20260101-example.md",
+    "message": "no other page links to this page"
+  }
+]

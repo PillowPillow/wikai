@@ -1,0 +1,7 @@
+[
+  {
+    "check": "links",
+    "path": "20-wiki/concepts/A.md",
+    "message": "target not found: Missing"
+  }
+]

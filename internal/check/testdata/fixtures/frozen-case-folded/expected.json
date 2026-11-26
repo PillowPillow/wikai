@@ -1,0 +1,7 @@
+[
+  {
+    "check": "frozen",
+    "path": "raw/a.md",
+    "message": "frozen file modified"
+  }
+]

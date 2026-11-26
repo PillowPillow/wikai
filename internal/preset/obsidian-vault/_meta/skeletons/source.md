@@ -1,0 +1,6 @@
+---
+type: source
+created:
+---
+
+# {{title}}

@@ -1,0 +1,63 @@
+version: 1
+root: .
+locale: en
+title: filename
+links: wikilink
+ignore: [.obsidian, _meta]
+
+frontmatter:
+  type:    { required: true }
+  created: { required: true, format: date }
+
+types:
+  wiki:
+    folders: [wiki]
+    frontmatter:
+      status:  { required: true, values: [draft, done] }
+      sources: { required: true, format: list }
+    kinds:
+      concept: { folder: wiki/concepts, name: "{title}", set: { kind: concept } }
+      summary: { folder: wiki/summaries, name: "Summary - {title}", set: { kind: summary } }
+      entity:  { folder: wiki/entities, name: "{title}", set: { kind: entity } }
+  source:
+    folders: [raw]
+  note:
+    folders: [notes]
+  meta: {}
+
+skeletons: _meta/skeletons
+
+stray: false
+
+index:
+  file: index.md
+  include: [wiki]
+  groups:
+    wiki/concepts:  Concepts
+    wiki/summaries: Summaries
+    wiki/entities:  Entities
+
+log:
+  mode: file
+  path: log.md
+  operations: [init, ingest, query, lint, move]
+  entry:
+    one_line: true
+    as_links: true
+
+frozen:
+  - path: raw
+append_only: [_meta/manifest.jsonl]
+
+template_markers: ["{{", "<%"]
+
+orphans:
+  scope: [wiki]
+  ignore_links_from: [index.md, log.md]
+
+manifest:
+  file: _meta/manifest.jsonl
+  pipeline: ingest-v1
+  statuses: [integrated, no_material, error, superseded]
+
+protected: [_meta, wikai.yaml, .claude]

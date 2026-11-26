@@ -1,0 +1,7 @@
+[
+  {
+    "check": "sources",
+    "path": "knowledge/repos/example-backend.md",
+    "message": "in sources but never cited: example-backend:a.md"
+  }
+]

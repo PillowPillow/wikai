@@ -1,0 +1,12 @@
+[
+  {
+    "check": "frontmatter",
+    "path": "10-raw/AGENTS.md",
+    "message": "no frontmatter"
+  },
+  {
+    "check": "frontmatter",
+    "path": "10-raw/zotero/lib.md",
+    "message": "no frontmatter"
+  }
+]
