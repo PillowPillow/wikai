@@ -111,7 +111,7 @@ The full format and the behaviour of every command are in the [design spec](docs
 
 ## Guard an agent
 
-Refuse agent writes to protected paths with a Claude Code hook in `.claude/settings.json`:
+Refuse agent writes to protected paths with a Claude Code hook in `.claude/settings.json`, or in `~/.claude/settings.json` to guard every base from any project (the hook applies each base that holds the file):
 
 ```json
 {

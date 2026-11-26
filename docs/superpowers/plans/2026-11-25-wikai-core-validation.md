@@ -142,10 +142,10 @@ Les vrais points à trancher. Chaque ligne donne le choix retenu, puis l'alterna
   - Conséquence : Une faute de frappe dans wikai.yaml bloque toutes les écritures de l'agent dans la base jusqu'à sa correction.
   - Sinon : Le hook laisse passer quand il ne peut pas décider : une config cassée ne bloque jamais l'agent, mais ne protège plus rien.
   - **Réponse : Choix retenu**
-- **B26.** Le hook de garde laisse passer l'écriture quand aucun wikai.yaml n'existe au-dessus du dossier du projet Claude Code : ce dossier n'est pas une base. *(plan · tâche 14)* — _Jamais discuté_
-  - Conséquence : Le même hook peut être installé au niveau global sans gêner les autres projets.
-  - Sinon : Sans wikai.yaml, le hook refuse toute écriture.
-  - **Réponse : Choix retenu**
+- **B26.** Le hook de garde applique les règles de chaque base au-dessus du fichier visé (chemin résolu et chemin écrit) et de la base du projet Claude Code ; il refuse dès qu'une base refuse. Il laisse passer l'écriture quand aucune base ne contient le fichier. *(plan · tâche 14 ; révisé le 2026-11-26)*
+  - Conséquence : Le même hook peut être installé au niveau global : il garde aussi une base voisine ou imbriquée, et un wikai.yaml imbriqué ne masque pas les règles de la base qui le contient.
+  - Sinon : Le hook ne garde que la base au-dessus du dossier du projet ; une écriture dans une autre base passe.
+  - **Réponse : Choix révisé par l'humain le 2026-11-26 (toutes les bases sur le chemin)**
 - **B17.** Le dossier .git est toujours un chemin protégé, sans qu'il faille l'écrire dans wikai.yaml. *(plan · tâche 14)* — _Jamais discuté_
   - Conséquence : L'agent ne peut pas écrire dans .git avec ses outils d'édition, même si la config l'oublie.
   - Sinon : Le dossier .git n'est protégé que si wikai.yaml le liste sous « protected ».

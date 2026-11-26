@@ -27,6 +27,21 @@ func Find(startDir string) (string, error) {
 	}
 }
 
+func FindAll(dir string) []string {
+	var files []string
+	for {
+		candidate := filepath.Join(dir, fileName)
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			files = append(files, candidate)
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return files
+		}
+		dir = parent
+	}
+}
+
 func Locate(cwd, configFlag, dirFlag string) (*Config, string, error) {
 	if configFlag == "" && dirFlag != "" {
 		return nil, "", exit.Usage("--dir needs --config")

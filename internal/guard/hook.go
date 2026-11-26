@@ -23,19 +23,51 @@ type Event struct {
 	} `json:"tool_input"`
 }
 
-func Hook(cfg *config.Config, boundary string, ev Event) (deny string) {
+// Every base above the target applies, not only the nearest: a nested wikai.yaml must not shadow its parent's rules.
+func Bases(ev Event, project string) []string {
+	var files []string
+	if target := targetOf(ev); filepath.IsAbs(target) {
+		if abs, err := resolve(target, ""); err == nil {
+			files = append(files, config.FindAll(filepath.Dir(abs))...)
+		}
+		files = append(files, config.FindAll(filepath.Dir(target))...)
+	}
+	if project != "" {
+		files = append(files, project)
+	}
+	seen := map[string]bool{}
+	var out []string
+	for _, f := range files {
+		key, err := resolve(filepath.Dir(f), "")
+		if err != nil {
+			key = filepath.Dir(f)
+		}
+		if !seen[key] {
+			seen[key] = true
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+func targetOf(ev Event) string {
 	target := ev.ToolInput.FilePath
 	if target == "" {
 		target = ev.ToolInput.NotebookPath
 	}
+	if target != "" && !filepath.IsAbs(target) && filepath.IsAbs(ev.Cwd) {
+		target = ev.Cwd + string(filepath.Separator) + target
+	}
+	return target
+}
+
+func Hook(cfg *config.Config, boundary string, ev Event) (deny string) {
+	target := targetOf(ev)
 	if target == "" {
 		return ""
 	}
 	if !filepath.IsAbs(target) {
-		if !filepath.IsAbs(ev.Cwd) {
-			return fmt.Sprintf("%s: relative path without an absolute cwd", target)
-		}
-		target = ev.Cwd + string(filepath.Separator) + target
+		return fmt.Sprintf("%s: relative path without an absolute cwd", target)
 	}
 	root, err := resolve(boundary, "")
 	if err != nil {

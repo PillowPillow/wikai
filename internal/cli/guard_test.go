@@ -83,6 +83,46 @@ func TestHookCLI(t *testing.T) {
 	}
 }
 
+func TestHookCLIGuardsEveryBaseOnThePath(t *testing.T) {
+	const frozen = "10-raw/web/a.md: frozen file, existing files are never modified\n"
+	const permissive = "version: 1\nroot: kb\ntypes:\n  note:\n    folders: [notes]\n"
+	brain, err := os.ReadFile(filepath.Join("..", "config", "testdata", "brain.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	vault := guardVault(t)
+	target := filepath.Join(vault, "10-raw", "web", "a.md")
+	other := testrepo.New(t, map[string]string{"wikai.yaml": permissive, "kb/notes/n.md": "n\n"})
+	if err := os.Symlink(filepath.Join(vault, "10-raw", "web"), filepath.Join(other, "web")); err != nil {
+		t.Fatal(err)
+	}
+	outer := t.TempDir()
+	testrepo.Write(t, outer, map[string]string{"wiki/wikai.yaml": string(brain), "wiki/10-raw/web/a.md": "a\n"})
+	shadowed := guardVault(t)
+	testrepo.Write(t, shadowed, map[string]string{"10-raw/wikai.yaml": permissive})
+	plain := t.TempDir()
+	cases := []struct {
+		name, project, file string
+		code                int
+		errOut              string
+	}{
+		{"sibling base", other, target, 2, frozen},
+		{"symlink into a sibling base", other, filepath.Join(other, "web", "a.md"), 2, frozen},
+		{"nested base below the project", outer, filepath.Join(outer, "wiki", "10-raw", "web", "a.md"), 2, frozen},
+		{"base shadowed by a nested wikai.yaml", filepath.Join(shadowed, "10-raw"), filepath.Join(shadowed, "10-raw", "web", "a.md"), 2, frozen},
+		{"no base on the path", other, filepath.Join(plain, "a.md"), 0, ""},
+		{"allowed in the project base", other, filepath.Join(other, "kb", "notes", "n.md"), 0, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			code, out, errOut := runHook(t, c.project, editEvent(c.file, c.project), map[string]string{"CLAUDE_PROJECT_DIR": c.project})
+			if code != c.code || out != "" || errOut != c.errOut {
+				t.Fatalf("code=%d out=%q err=%q", code, out, errOut)
+			}
+		})
+	}
+}
+
 func TestCommitCLI(t *testing.T) {
 	vault := guardVault(t)
 	code, out, errOut := run(t, vault, "guard", "commit", "--staged")
