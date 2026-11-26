@@ -236,7 +236,7 @@ protected:                     # paths the agent never writes (guard)
 - **`frozen`, `append_only`, `base_branch`** — a frozen file may be added, never modified, renamed or deleted. An append-only file may only grow at its end. The reference is the merge-base of `HEAD` and `origin/<base_branch>`; `HEAD` when the repository has no remote; `--base <ref>` overrides.
 - **`citations`** — parses `(source: X)` outside code. Each cited `X` must be in the frontmatter list, and each list entry must be cited. With `code: true`, a citation shaped `<repo>@<sha>:<path>` must be `<repo>@<sha7>:<path>#L<start>[-L<end>]` with a valid range, and matches the list entry without its range. A citation written as a markdown link matches by its target.
 - **`orphans`** — a page in `scope` (default: every type folder) with no link from another page is a finding. `ignore_links_from` and `ignore_links_from_types` do not count as inbound; `exempt_types` are never orphans. The index never counts.
-- **`template_markers`** — these strings left in a page are a finding; in a frozen path, only the frontmatter is searched. The `templates` check also reads every skeleton: a `{{date:FMT}}` or `{{time:FMT}}` that `new page` would refuse is a finding on the skeleton's path, so CI finds it before the first page of that kind. This skeleton check runs even when `template_markers` is empty. Skeletons still do not count as pages.
+- **`template_markers`** — these strings left in a page are a finding; in a frozen path, only the frontmatter is searched. The `templates` check also reads every skeleton, minus `ignore` and `.git`: a `{{date:FMT}}` or `{{time:FMT}}` that `new page` would refuse is a finding on the skeleton's path, so CI finds it before the first page of that kind. This skeleton check runs even when `template_markers` is empty. Skeletons still do not count as pages.
 - **`unchecked_frontmatter`** — folders whose pages skip the frontmatter and type rules; their links are still checked.
 - **`manifest`** — see `wikai manifest`.
 - **`protected`** — see `wikai guard`.
@@ -278,7 +278,7 @@ Tokens of `FMT`, longest match first:
 
 | Token | Output | Token | Output |
 |---|---|---|---|
-| `YYYY` `YY` | year, 4 and 2 digits | `H` `HH` | hour 0–23 |
+| `YYYY` `Y` `YY` | year, 4 digits (`Y`: `+` above 9999) and 2 digits | `H` `HH` | hour 0–23 |
 | `GGGG` | ISO week year | `h` `hh` | hour 1–12 |
 | `M` `MM` | month number | `m` `mm` | minute |
 | `MMM` `MMMM` | month name, short and long | `s` `ss` | second |
@@ -287,7 +287,7 @@ Tokens of `FMT`, longest match first:
 | `dd` `ddd` `dddd` | weekday name, minimal, short, long | `Hmm` `Hmmss` | `H` then `mm`, then `ss` |
 | | | `hmm` `hmmss` | `h` then `mm`, then `ss` |
 
-Two-letter forms are zero-padded. Names and ordinals follow `locale`: `en` gives `January`, `Jan`, `Sunday`, `Sun`, `Su`, `1st`; `fr` gives `janvier`, `janv.`, `dimanche`, `dim.`, `di`, `1er` (then `2`, `3`…), as Moment's `fr` locale. `A` and `a` are the same in both locales. Text inside `[…]` and a character after `\` are written as they are. Any other Moment token (`Q`, `DDD`, `w`, `X`, `L`, `Z`…) is a usage error (exit 2) that names the skeleton and the token. Any other character, such as `-`, `/`, `:` or the `T` of `YYYY-MM-DDTHH:mm`, is written as it is.
+Two-letter forms are zero-padded. Names and ordinals follow `locale`: `en` gives `January`, `Jan`, `Sunday`, `Sun`, `Su`, `1st`; `fr` gives `janvier`, `janv.`, `dimanche`, `dim.`, `di`, `1er` (then `2`, `3`…), as Moment's `fr` locale. `A` and `a` are the same in both locales. Text inside `[…]` and a character after `\` are written as they are; any other `\` is dropped, as in Moment, so `[\]` writes a backslash. Any other Moment token (`Q`, `DDD`, `w`, `X`, `L`, `Z`…) is a usage error (exit 2) that names the skeleton and the token. Any other character, such as `-`, `/`, `:` or the `T` of `YYYY-MM-DDTHH:mm`, is written as it is.
 
 A `{{…}}` with any other name stays in the page for the agent; `template_markers` reports it until it is replaced.
 

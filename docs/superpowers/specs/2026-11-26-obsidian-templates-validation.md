@@ -53,7 +53,8 @@ I only check that my transcription matches what you said.
   - **Réponse : Faithful**
 - **A9.** With --date, every time token prints midnight, so {{time}} gives 00:00 on any machine. *(decision of 26 Nov on --date)*
   - **Réponse : Faithful**
-- **A10.** wikai check reads every skeleton and reports a date or time format that wikai new page would refuse. *(decision of 26 Nov on check)*
+- **A10.** wikai check reads every skeleton, except files under an ignore path or a .git folder, and reports a date or time format that wikai new page would refuse. *(decisions of 26 Nov on check and on ignore)*
+  - Conséquence : An ignored skeleton that a kind still uses is not checked in CI; wikai new page still stops with exit 2 on its bad token.
   - **Réponse : Faithful**
 - **A11a.** The work ships from one branch and one PR; Claude does not merge it and does not tag it. *(session brief)*
   - **Réponse : Faithful**
@@ -72,6 +73,12 @@ I only check that my transcription matches what you said.
 - **A16.** --set refuses with exit 2 a key that holds {, } or a line break, because no marker name can hold it. *(decision of 26 Nov after the second review of the pull request)*
   - Conséquence : In v0.1.1, --set 'a}b=1' filled {{a}b}} with 1; that call now fails.
   - **Réponse : Faithful**
+- **A17.** A lone Y in FMT prints the year on 4 digits, as Moment does: {{date:Y-MM-DD}} gives 2026-01-02, and YYY reads as YY then Y, so it gives 262026. *(decision of 26 Nov after the third review of the pull request)* — _Differs from your earlier answer_
+  - Conséquence : You had approved the earlier default that a lone Y prints the letter Y, as Moment does; Moment's source shows that Y is the year, so that default rested on a wrong fact.
+  - **Réponse : Faithful**
+- **A18.** In FMT, text inside [ ] and a character after a backslash print as written; every other backslash is dropped, as Moment does, so [\] is the way to print a backslash. *(decision of 26 Nov after the third review of the pull request)* — _Differs from your earlier answer_
+  - Conséquence : You had approved that a backslash escapes the next character, as in Moment; that stays, but a backslash with nothing to escape, such as the second of two or one at the end, now prints nothing instead of a backslash.
+  - **Réponse : Faithful**
 
 ## B — My defaults
 
@@ -88,12 +95,6 @@ The real points to decide. Each line gives the retained choice, then the alterna
 
 - **B2.** A character of FMT that is not a Moment token prints as written, as Moment does: the T in {{date:YYYY-MM-DDTHH:mm}} prints T. *(spec, wikai new page)* — _Never discussed_
   - Sinon : Any letter of FMT that is not a supported token stops wikai new page with exit 2, so a literal letter must sit inside [ ].
-  - **Réponse : Retained choice**
-- **B2b.** wikai reads FMT exactly as Moment does, longest token first: YYY reads as the token YY followed by the letter Y, and a lone Y prints Y. *(spec, wikai new page)* — _Never discussed_
-  - Sinon : A run of Y that is not YYYY or YY stops wikai new page with exit 2.
-  - **Réponse : Retained choice**
-- **B3.** A character after a backslash in FMT prints as written, as in Moment; text inside [ ] does too. *(spec, wikai new page)* — _Never discussed_
-  - Sinon : Only [ ] escapes; a backslash prints as a backslash.
   - **Réponse : Retained choice**
 - **B4.** {{date:FMT}} and {{time:FMT}} accept the same tokens and give the same text, as in Obsidian. *(spec, wikai new page)* — _Never discussed_
   - Sinon : {{date:FMT}} accepts only date tokens and {{time:FMT}} only time tokens; a mix is exit 2.

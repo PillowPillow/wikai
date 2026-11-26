@@ -16,7 +16,7 @@ Branch: `feat/obsidian-templates`, one PR. The human tags v0.2.0.
 ## Slices (red-green, each one commit or more, gate green at the end of each)
 
 1. **Tracer bullet** — `{{time}}` and `{{date:YYYY-MM-DD}}`, `{{date:DD/MM/YY HH:mm}}` filled by `wikai new page`; `--date` gives 00:00. Keep: unknown `{{x}}` stays, a literal `{{` stays, a `--summary`/`--set` value holding `{{date:YYYY}}` stays literal (`page_test.go:112` invariant).
-2. **Every supported token** — `M D H h hh m s A a W WW GGGG`; `[…]` and `\` literals; `T` and other non-token characters literal; `Y` alone literal (Moment). Table test against values computed by hand, ISO week edge (2027-01-01 → week 53 of 2026).
+2. **Every supported token** — `M D H h hh m s A a W WW GGGG`; `[…]` and `\` literals; `T` and other non-token characters literal; `Y` alone the 4-digit year (Moment). Table test against values computed by hand, ISO week edge (2027-01-01 → week 53 of 2026).
 3. **Names and ordinals** — `MMM MMMM dd ddd dddd Do` in `en` and `fr`.
 4. **Unsupported tokens** — `Q`, `DDD`, `w`, `X`, `LL`, `Z`, `Mo` → exit 2 naming the skeleton and the token; no file written.
 5. **Reserved `--set` keys** — `title date time slug summary date:… time:…` → exit 2.
