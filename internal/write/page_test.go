@@ -419,3 +419,19 @@ func TestNewPageUnmatchedGroup(t *testing.T) {
 		t.Fatalf("%q %v", p, err)
 	}
 }
+
+func TestNewPageVaultRefusesWikilinkBreakingName(t *testing.T) {
+	b, dir := vaultBase(t)
+	for _, title := range []string{"C# basics", "a|b", "a[b", "a]b"} {
+		_, err := NewPage(b, PageOpts{Kind: "entity", Title: title, Summary: "s", Date: jan2})
+		if exit.Code(err) != 1 || !strings.Contains(err.Error(), "a wikilink name holds none of # | [ ]") {
+			t.Errorf("%q: err = %v", title, err)
+		}
+		if exists(dir, "20-wiki/entites/"+title+".md") {
+			t.Errorf("%q written", title)
+		}
+	}
+	if got := read(t, dir, "index.md"); got != vaultIndex {
+		t.Fatalf("index changed")
+	}
+}

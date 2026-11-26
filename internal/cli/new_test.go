@@ -146,3 +146,22 @@ func TestNewLogCLI(t *testing.T) {
 		t.Fatalf("code=%d", code)
 	}
 }
+
+func TestNewPageCLIRefusesWikilinkBreakingName(t *testing.T) {
+	dir := t.TempDir()
+	if code, _, errOut := run(t, dir, "init", "--preset", "obsidian-vault"); code != 0 {
+		t.Fatalf("init: %q", errOut)
+	}
+	before := listFiles(t, dir)
+	index := readFile(t, filepath.Join(dir, "index.md"))
+	code, out, errOut := run(t, dir, "new", "page", "concept", "C# basics", "--summary", "x")
+	if code != 1 || out != "" || !strings.HasPrefix(errOut, "refused: ") {
+		t.Fatalf("code=%d out=%q err=%q", code, out, errOut)
+	}
+	if after := listFiles(t, dir); strings.Join(after, "\n") != strings.Join(before, "\n") {
+		t.Fatalf("files changed:\nbefore %v\nafter %v", before, after)
+	}
+	if got := readFile(t, filepath.Join(dir, "index.md")); got != index {
+		t.Fatalf("index changed: %q", got)
+	}
+}

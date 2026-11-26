@@ -47,8 +47,8 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 	}
 	stem := strings.TrimSuffix(path.Base(dest), ".md")
 	style := b.Cfg.Links
-	if style == "wikilink" && strings.ContainsAny(stem, "#|[]") {
-		return MoveResult{}, exit.Usage("%s: a wikilink name holds none of # | [ ]", o.New)
+	if breaksWikilink(style, stem) {
+		return MoveResult{}, exit.Usage(wikilinkNameMsg, o.New)
 	}
 	if reserved(b, dest) {
 		return MoveResult{}, exit.Refused("%s is the index, the log, a skeleton or an ignored path", dest)

@@ -28,6 +28,12 @@ func oneLine(label, s string) (string, error) {
 	return s, nil
 }
 
+const wikilinkNameMsg = "%s: a wikilink name holds none of # | [ ]"
+
+func breaksWikilink(style, name string) bool {
+	return style == "wikilink" && strings.ContainsAny(name, "#|[]")
+}
+
 func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 	_, kind, ok := b.Cfg.KindOf(o.Kind)
 	if !ok {
@@ -59,6 +65,9 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 	name := nfc(strings.NewReplacer("{title}", title, "{slug}", slug, "{date:compact}", day.Format("20060102"), "{date}", date).Replace(kind.Name))
 	if name == "" || name == "." || name == ".." || strings.ContainsAny(name, "/\\\x00\r\n") {
 		return "", exit.Usage("the page name %q is not a file name", name)
+	}
+	if breaksWikilink(b.Cfg.Links, name) {
+		return "", exit.Refused(wikilinkNameMsg, name)
 	}
 	pagePath := nfc(path.Join(b.Cfg.RootPath(kind.Folder), name+".md"))
 	disk := filepath.Join(b.Boundary, filepath.FromSlash(pagePath))
