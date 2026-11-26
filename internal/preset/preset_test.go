@@ -10,6 +10,7 @@ import (
 
 	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
+	"github.com/PillowPillow/wikai/internal/guard"
 )
 
 var day = time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC)
@@ -96,5 +97,23 @@ func TestWriteKeepsExistingFilesAndReturnsRelativePaths(t *testing.T) {
 	}
 	if slices.Contains(created, "log.md") || !slices.Contains(created, "wikai.yaml") || !slices.Contains(created, "_meta/skeletons/concept.md") {
 		t.Fatalf("%v", created)
+	}
+}
+
+func TestPresetsProtectTheGuardControls(t *testing.T) {
+	for _, name := range Names() {
+		dir := t.TempDir()
+		if _, err := Write(name, dir, day); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		cfg, err := config.Load(filepath.Join(dir, "wikai.yaml"))
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		for _, p := range []string{"wikai.yaml", ".claude/settings.json"} {
+			if got := guard.Classify(cfg, p); got != guard.Protected {
+				t.Errorf("%s: %s is %v, want protected", name, p, got)
+			}
+		}
 	}
 }

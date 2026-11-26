@@ -60,4 +60,4 @@ manifest:
   pipeline: ingest-v1
   statuses: [integrated, no_material, error, superseded]
 
-protected: [_meta, wikai.yaml]
+protected: [_meta, wikai.yaml, .claude]

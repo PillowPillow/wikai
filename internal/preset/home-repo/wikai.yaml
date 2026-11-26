@@ -52,6 +52,7 @@ frozen:
   - path: archive
     checked: false
   - path: log
+protected: [wikai.yaml, .claude]
 base_branch: main
 
 citations:
