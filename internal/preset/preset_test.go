@@ -134,7 +134,10 @@ func TestPresetSkeletonsUseOnlySupportedTokens(t *testing.T) {
 			t.Fatalf("%s: no skeleton", name)
 		}
 		for _, s := range skels {
-			data, _ := os.ReadFile(s)
+			data, err := os.ReadFile(s)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if errs := marker.Check(string(data)); len(errs) != 0 {
 				t.Errorf("%s: %v", s, errs)
 			}

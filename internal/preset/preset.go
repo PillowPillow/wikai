@@ -3,6 +3,7 @@ package preset
 import (
 	"embed"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -90,7 +91,7 @@ func Write(name, dir string, date time.Time) ([]string, error) {
 		if !strings.HasPrefix(f.rel, skeletons+"/") {
 			text, err := marker.Fill(string(data), nil, date, cfg.Locale)
 			if err != nil {
-				return created, err
+				return created, fmt.Errorf("preset %s, %s: %w", name, f.rel, err)
 			}
 			data = []byte(text)
 		}
