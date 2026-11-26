@@ -348,6 +348,17 @@ func vaultBase(t *testing.T) (*wiki.Base, string) {
 	return loadBase(t, dir)
 }
 
+func TestNewPageRefusesASlugWithALineBreakThatTheNameDoesNotUse(t *testing.T) {
+	b, dir := vaultBase(t)
+	_, err := NewPage(b, PageOpts{Kind: "entity", Title: "Acme", Summary: "s", Slug: "a\nb", Date: jan2})
+	if exit.Code(err) != 2 || !strings.Contains(err.Error(), "--slug must hold no line break") {
+		t.Fatalf("err = %v", err)
+	}
+	if exists(dir, "20-wiki/entites/Acme.md") {
+		t.Fatal("page written")
+	}
+}
+
 func TestNewPageVault(t *testing.T) {
 	b, dir := vaultBase(t)
 	p, err := NewPage(b, PageOpts{Kind: "entity", Title: "Acme Tool", Summary: "A tool.", Date: jan2})

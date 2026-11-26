@@ -56,7 +56,10 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 		day = time.Now()
 	}
 	date := day.Format("2006-01-02")
-	slug := o.Slug
+	slug, err := oneLine("--slug", o.Slug)
+	if err != nil {
+		return "", err
+	}
 	if slug == "" {
 		slug = Slugify(title)
 	}
