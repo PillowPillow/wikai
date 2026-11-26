@@ -12,6 +12,7 @@ import (
 
 	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
+	"github.com/PillowPillow/wikai/internal/marker"
 	"github.com/PillowPillow/wikai/internal/wiki"
 )
 
@@ -55,7 +56,10 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 		day = time.Now()
 	}
 	date := day.Format("2006-01-02")
-	slug := o.Slug
+	slug, err := oneLine("--slug", o.Slug)
+	if err != nil {
+		return "", err
+	}
 	if slug == "" {
 		slug = Slugify(title)
 	}
@@ -101,15 +105,24 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 	} else if err != nil {
 		return "", err
 	}
-	pairs := []string{"{{title}}", title, "{{date}}", date, "{{slug}}", slug, "{{summary}}", summary}
+	values := map[string]string{"title": title, "slug": slug, "summary": summary}
 	for _, k := range slices.Sorted(mapKeys(o.Set)) {
+		if marker.Reserved(k) {
+			return "", exit.Usage("--set %s: a built-in value", k)
+		}
+		if strings.ContainsAny(k, "{}\r\n") {
+			return "", exit.Usage("--set %q: a marker name holds no {, } or line break", k)
+		}
 		v, err := oneLine("--set "+k, o.Set[k])
 		if err != nil {
 			return "", err
 		}
-		pairs = append(pairs, "{{"+k+"}}", v)
+		values[k] = v
 	}
-	text := strings.NewReplacer(pairs...).Replace(string(data))
+	text, err := marker.Fill(string(data), values, day, b.Cfg.Locale)
+	if err != nil {
+		return "", exit.Usage("skeleton %s: %v", skeleton, err)
+	}
 	if text, err = setFrontmatter(text, kind.Set); err != nil {
 		return "", exit.Usage("skeleton %s: %v", skeleton, err)
 	}

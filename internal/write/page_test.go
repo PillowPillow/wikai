@@ -119,6 +119,53 @@ func TestNewPageSet(t *testing.T) {
 	}
 }
 
+func TestNewPageFillsObsidianDateAndTimeMarkers(t *testing.T) {
+	b, dir := homeBase(t)
+	testrepo.Write(t, dir, map[string]string{"knowledge/_skeletons/term.md": "---\ntype: term\ncreated: {{date}}\nupdated:\nsources: []\naliases: []\n---\n\n# {{title}}\n\nAt {{time}} on {{date:DD/MM/YY HH:mm}}, {{time:YYYY-MM-DD}}. {{x}} {{date:YYYY {{ {{summary}}\n"})
+	at := time.Date(2026, 1, 2, 14, 5, 9, 0, time.UTC)
+	p, err := NewPage(b, PageOpts{Kind: "term", Title: "Clock", Summary: "{{date:YYYY}}", Date: at})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := read(t, dir, p)
+	if !strings.Contains(got, "created: 2026-01-02\n") || !strings.Contains(got, "At 14:05 on 02/01/26 14:05, 2026-01-02. {{x}} {{date:YYYY {{ {{date:YYYY}}\n") {
+		t.Fatalf("content = %q", got)
+	}
+}
+
+func TestNewPageRefusesAnUnsupportedTokenAndWritesNothing(t *testing.T) {
+	b, dir := homeBase(t)
+	testrepo.Write(t, dir, map[string]string{"knowledge/_skeletons/term.md": "---\ntype: term\ncreated:\nupdated:\nsources: []\naliases: []\n---\n\n# {{title}} {{date:YYYY-Q}}\n"})
+	before := read(t, dir, "knowledge/index.md")
+	_, err := NewPage(b, PageOpts{Kind: "term", Title: "Quarter", Summary: "s", Date: jan2})
+	if exit.Code(err) != 2 || !strings.Contains(err.Error(), `skeleton term: unsupported token "Q" in {{date:YYYY-Q}}`) {
+		t.Fatalf("err = %v", err)
+	}
+	if exists(dir, "knowledge/glossary/quarter.md") || read(t, dir, "knowledge/index.md") != before {
+		t.Fatal("a page or an index line was written")
+	}
+}
+
+func TestNewPageRefusesASetKeyThatNamesABuiltInValue(t *testing.T) {
+	for _, k := range []string{"title", "date", "time", "slug", "summary", "date:YYYY", "time:HH", "Title", "DATE", "Time:HH", "SUMMARY"} {
+		b, _ := homeBase(t)
+		_, err := NewPage(b, PageOpts{Kind: "term", Title: "Offer", Summary: "s", Date: jan2, Set: map[string]string{k: "x"}})
+		if exit.Code(err) != 2 || !strings.Contains(err.Error(), "--set "+k+": a built-in value") {
+			t.Errorf("--set %s: err = %v", k, err)
+		}
+	}
+}
+
+func TestNewPageRefusesASetKeyThatNoMarkerNameCanHold(t *testing.T) {
+	for _, k := range []string{"a}b", "a{b", "a\nb", "a\rb"} {
+		b, _ := homeBase(t)
+		_, err := NewPage(b, PageOpts{Kind: "term", Title: "Offer", Summary: "s", Date: jan2, Set: map[string]string{k: "x"}})
+		if exit.Code(err) != 2 || !strings.Contains(err.Error(), "a marker name holds no") {
+			t.Errorf("--set %q: err = %v", k, err)
+		}
+	}
+}
+
 func TestNewPageSetDoesNotAddFrontmatterKey(t *testing.T) {
 	b, dir := homeBase(t)
 	p, err := NewPage(b, PageOpts{Kind: "term", Title: "Offer", Summary: "s", Date: jan2, Set: map[string]string{"color": "red"}})
@@ -309,6 +356,17 @@ func vaultBase(t *testing.T) (*wiki.Base, string) {
 		"20-wiki/resumes/Résumé - Z.md":  "---\ntype: wiki\n---\n",
 	})
 	return loadBase(t, dir)
+}
+
+func TestNewPageRefusesASlugWithALineBreakThatTheNameDoesNotUse(t *testing.T) {
+	b, dir := vaultBase(t)
+	_, err := NewPage(b, PageOpts{Kind: "entity", Title: "Acme", Summary: "s", Slug: "a\nb", Date: jan2})
+	if exit.Code(err) != 2 || !strings.Contains(err.Error(), "--slug must hold no line break") {
+		t.Fatalf("err = %v", err)
+	}
+	if exists(dir, "20-wiki/entites/Acme.md") {
+		t.Fatal("page written")
+	}
 }
 
 func TestNewPageVault(t *testing.T) {

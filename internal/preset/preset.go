@@ -3,6 +3,7 @@ package preset
 import (
 	"embed"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
+	"github.com/PillowPillow/wikai/internal/marker"
 )
 
 //go:embed all:home-repo all:obsidian-vault
@@ -81,14 +83,17 @@ func Write(name, dir string, date time.Time) ([]string, error) {
 		return created, err
 	}
 	skeletons := cfg.RootPath(cfg.Skeletons)
-	day := date.Format("2006-01-02")
 	for _, f := range files {
 		if f.rel == "wikai.yaml" {
 			continue
 		}
 		data := f.data
 		if !strings.HasPrefix(f.rel, skeletons+"/") {
-			data = []byte(strings.ReplaceAll(string(data), "{{date}}", day))
+			text, err := marker.Fill(string(data), nil, date, cfg.Locale)
+			if err != nil {
+				return created, fmt.Errorf("preset %s, %s: %w", name, f.rel, err)
+			}
+			data = []byte(text)
 		}
 		if err := put(f.rel, data); err != nil {
 			return created, err

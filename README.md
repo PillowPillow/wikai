@@ -19,7 +19,7 @@ curl -fsSL https://raw.githubusercontent.com/PillowPillow/wikai/main/install.sh 
 ## Commands
 
 - `wikai check [--base <ref>] [--json]`: run every check the config turns on and exit 1 on findings.
-- `wikai new page <kind> <title> --summary <text>`: create a page from its skeleton and add its index line; refused when another page has the same name.
+- `wikai new page <kind> <title> --summary <text>`: create a page from its skeleton and add its index line; refused when another page has the same name. Skeletons take `{{title}}`, `{{slug}}`, `{{summary}}`, `{{key}}` for `--set key=value`, and the Obsidian core Templates markers `{{date}}`, `{{time}}`, `{{date:FMT}}`, `{{time:FMT}}` with a subset of Moment.js tokens ([tokens](docs/superpowers/specs/2026-11-25-wikai-core-design.md#wikai-new-page-kind-title---summary-text---slug-s---date-d---set-keyvalue)).
 - `wikai new log <operation> <title>`: write a log entry.
 - `wikai move <old> <new>`: `git mv` a page and rewrite every link to it; refused when it would change a link in a checked frozen page.
 - `wikai manifest hash|status|append <note>`: hash a note and read or append its manifest record.

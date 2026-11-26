@@ -11,6 +11,7 @@ import (
 	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
 	"github.com/PillowPillow/wikai/internal/guard"
+	"github.com/PillowPillow/wikai/internal/marker"
 )
 
 var day = time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC)
@@ -113,6 +114,32 @@ func TestPresetsProtectTheGuardControls(t *testing.T) {
 		for _, p := range []string{"wikai.yaml", ".claude/settings.json"} {
 			if got := guard.Classify(cfg, p); got != guard.Protected {
 				t.Errorf("%s: %s is %v, want protected", name, p, got)
+			}
+		}
+	}
+}
+
+func TestPresetSkeletonsUseOnlySupportedTokens(t *testing.T) {
+	for _, name := range Names() {
+		dir := t.TempDir()
+		if _, err := Write(name, dir, day); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := config.Load(filepath.Join(dir, "wikai.yaml"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		skels, _ := filepath.Glob(filepath.Join(dir, filepath.FromSlash(cfg.RootPath(cfg.Skeletons)), "*.md"))
+		if len(skels) == 0 {
+			t.Fatalf("%s: no skeleton", name)
+		}
+		for _, s := range skels {
+			data, err := os.ReadFile(s)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if errs := marker.Check(string(data)); len(errs) != 0 {
+				t.Errorf("%s: %v", s, errs)
 			}
 		}
 	}
