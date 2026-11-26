@@ -12,6 +12,7 @@ import (
 
 	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
+	"github.com/PillowPillow/wikai/internal/marker"
 	"github.com/PillowPillow/wikai/internal/wiki"
 )
 
@@ -101,15 +102,20 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 	} else if err != nil {
 		return "", err
 	}
-	pairs := []string{"{{title}}", title, "{{date}}", date, "{{slug}}", slug, "{{summary}}", summary}
+	values := map[string]string{"title": title, "slug": slug, "summary": summary}
 	for _, k := range slices.Sorted(mapKeys(o.Set)) {
 		v, err := oneLine("--set "+k, o.Set[k])
 		if err != nil {
 			return "", err
 		}
-		pairs = append(pairs, "{{"+k+"}}", v)
+		if _, builtin := values[k]; !builtin {
+			values[k] = v
+		}
 	}
-	text := strings.NewReplacer(pairs...).Replace(string(data))
+	text, err := marker.Fill(string(data), values, day)
+	if err != nil {
+		return "", exit.Usage("skeleton %s: %v", skeleton, err)
+	}
 	if text, err = setFrontmatter(text, kind.Set); err != nil {
 		return "", exit.Usage("skeleton %s: %v", skeleton, err)
 	}

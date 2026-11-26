@@ -119,6 +119,20 @@ func TestNewPageSet(t *testing.T) {
 	}
 }
 
+func TestNewPageFillsObsidianDateAndTimeMarkers(t *testing.T) {
+	b, dir := homeBase(t)
+	testrepo.Write(t, dir, map[string]string{"knowledge/_skeletons/term.md": "---\ntype: term\ncreated: {{date}}\nupdated:\nsources: []\naliases: []\n---\n\n# {{title}}\n\nAt {{time}} on {{date:DD/MM/YY HH:mm}}, {{time:YYYY-MM-DD}}. {{x}} {{date:YYYY {{ {{summary}}\n"})
+	at := time.Date(2026, 1, 2, 14, 5, 9, 0, time.UTC)
+	p, err := NewPage(b, PageOpts{Kind: "term", Title: "Clock", Summary: "{{date:YYYY}}", Date: at})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := read(t, dir, p)
+	if !strings.Contains(got, "created: 2026-01-02\n") || !strings.Contains(got, "At 14:05 on 02/01/26 14:05, 2026-01-02. {{x}} {{date:YYYY {{ {{date:YYYY}}\n") {
+		t.Fatalf("content = %q", got)
+	}
+}
+
 func TestNewPageSetDoesNotAddFrontmatterKey(t *testing.T) {
 	b, dir := homeBase(t)
 	p, err := NewPage(b, PageOpts{Kind: "term", Title: "Offer", Summary: "s", Date: jan2, Set: map[string]string{"color": "red"}})
