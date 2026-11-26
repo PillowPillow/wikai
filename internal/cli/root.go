@@ -44,6 +44,7 @@ func newRoot(env Env) *cobra.Command {
 	root.AddCommand(newCheck(env))
 	root.AddCommand(newNew(env))
 	root.AddCommand(newMove(env))
+	root.AddCommand(newManifest(env))
 	return root
 }
 
