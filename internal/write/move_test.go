@@ -453,3 +453,41 @@ func TestMoveVaultKeepsAppendOnlyLog(t *testing.T) {
 		t.Fatalf("log = %q", got)
 	}
 }
+
+func TestMoveVaultRewritesLogLinksWithoutFrontmatter(t *testing.T) {
+	const log = "# Log\n\n## [2026-01-01] ingest | x\n- créé : [[Evals]]\n"
+	b, dir := vaultRepo(t, map[string]string{"log.md": log})
+	if _, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: "20-wiki/concepts/LLM evals.md", Date: jan3}); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, dir, "log.md"); !strings.HasPrefix(got, strings.Replace(log, "[[Evals]]", "[[LLM evals]]", 1)+"\n## [2026-01-03] move") {
+		t.Fatalf("log = %q", got)
+	}
+}
+
+func TestMoveVaultRefusesAFolderWithoutIndexGroupWhenTheIndexIsChecked(t *testing.T) {
+	cfg, err := os.ReadFile(filepath.Join("..", "config", "testdata", "brain.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := strings.Replace(string(cfg), "  check: false\n", "  check: true\n", 1)
+	if checked == string(cfg) {
+		t.Fatal("index check line not found")
+	}
+	b, dir := vaultRepo(t, map[string]string{"wikai.yaml": checked})
+	_, err = Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: "20-wiki/entites/Evals.md", NoLog: true})
+	if exit.Code(err) != 2 || err.Error() != "no index group for 20-wiki/entites/: add it to index.groups" {
+		t.Fatalf("err = %v", err)
+	}
+	if st := porcelain(t, dir); st != "" {
+		t.Fatalf("status = %q", st)
+	}
+}
+
+func TestMoveRefusesAnEmptyPageNameWithoutLog(t *testing.T) {
+	b, dir := homeRepo(t, nil)
+	_, err := Move(b, MoveOpts{Old: "knowledge/glossary/billing.md", New: "knowledge/glossary/.md", NoLog: true})
+	if exit.Code(err) != 2 || porcelain(t, dir) != "" {
+		t.Fatalf("err = %v", err)
+	}
+}

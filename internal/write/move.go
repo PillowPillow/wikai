@@ -50,6 +50,9 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 		return MoveResult{}, exit.Usage("%s must be a .md path inside %s", o.New, root)
 	}
 	stem := strings.TrimSuffix(path.Base(dest), ".md")
+	if stem == "" {
+		return MoveResult{}, exit.Usage("%s has an empty page name", o.New)
+	}
 	style := b.Cfg.Links
 	if breaksWikilink(style, stem) {
 		return MoveResult{}, exit.Usage(wikilinkNameMsg, o.New)
@@ -63,6 +66,11 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 	archive := frozenDest(b, dest)
 	if !archive && !typeAllows(b, page.Type, dest) {
 		return MoveResult{}, exit.Refused("a page moves only inside its type or to a frozen path")
+	}
+	if !archive {
+		if err := RequireGroup(b, dest); err != nil {
+			return MoveResult{}, err
+		}
 	}
 
 	day := o.Date
@@ -106,6 +114,14 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 		case text != p.Text:
 			changes[p.Path] = text
 			modified = append(modified, p.Path)
+		}
+	}
+	for _, d := range b.Docs {
+		if d.Path != b.LogPath() || frozenDest(b, d.Path) || appendOnly(b, d.Path) {
+			continue
+		}
+		if text := wiki.RewriteLinks(style, d.Text, rewrite(d.Path)); text != d.Text {
+			changes[d.Path] = text
 		}
 	}
 	if err := updateIndex(b, old, dest, archive, rewrite, changes); err != nil {

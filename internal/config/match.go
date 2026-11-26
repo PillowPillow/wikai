@@ -17,7 +17,7 @@ func Segments(p string) []string {
 	return strings.Split(p, "/")
 }
 
-// Under reports whether p is dir or inside it, segment by segment, folding case: on a case-insensitive filesystem, Raw is raw.
+// Under reports whether p is dir or inside it, segment by segment, folding case so a rule still matches on a case-insensitive filesystem.
 func Under(p, dir string) bool {
 	segs, prefix := Segments(p), Segments(dir)
 	return len(prefix) <= len(segs) && slices.EqualFunc(segs[:len(prefix)], prefix, strings.EqualFold)

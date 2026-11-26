@@ -148,6 +148,13 @@ func TestRewriteLinksSeesWhatLinksReturns(t *testing.T) {
 	}
 }
 
+func TestMarkdownLinkTextWithEscapedBrackets(t *testing.T) {
+	want := []Link{{Line: 1, Target: "glossary/foo.md"}, {Line: 1, Target: "b.md"}}
+	if got := Links("markdown", `- [Foo \[beta\]](glossary/foo.md) [a\\](b.md)`); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v", got)
+	}
+}
+
 func TestLinksUnknownStyle(t *testing.T) {
 	if got := Links("other", "[a](b) [[c]]"); len(got) != 0 {
 		t.Errorf("got %+v", got)

@@ -483,3 +483,18 @@ func TestNewPageKeepsCRLFIndex(t *testing.T) {
 		t.Fatalf("index = %q", got)
 	}
 }
+
+func TestIndexAddWritesABracketedTitleThatParsesBack(t *testing.T) {
+	b, _ := homeRepo(t, nil)
+	added, err := IndexAdd(b, moveIndex, "knowledge/glossary/foo.md", "Foo [beta]", "x")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(added, "- [billing](glossary/billing.md) — billing of a customer\n- [contract](glossary/contract.md) — commercial commitment of a customer\n- [Foo \\[beta\\]](glossary/foo.md) — x\n") {
+		t.Fatalf("index = %q", added)
+	}
+	removed, err := IndexRemove(b, added, "knowledge/glossary/foo.md")
+	if err != nil || removed != moveIndex {
+		t.Fatalf("index = %q, err = %v", removed, err)
+	}
+}

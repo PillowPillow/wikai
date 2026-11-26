@@ -17,7 +17,7 @@ type Link struct {
 }
 
 var (
-	markdownLinkRe = regexp.MustCompile(`!?\[[^\]]*\]\(\s*(<[^>]*>|[^)\s]*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`)
+	markdownLinkRe = regexp.MustCompile(`!?\[(?:[^\]\\]|\\.)*\]\(\s*(<[^>]*>|[^)\s]*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`)
 	schemeRe       = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9+.-]*:`)
 	wikilinkRe     = regexp.MustCompile(`\[\[([^\[\]|#]*)(?:#([^\[\]|]*))?(?:\|[^\[\]]*)?\]\]`)
 )
