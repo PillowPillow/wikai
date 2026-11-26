@@ -271,7 +271,8 @@ Skeleton markers follow the Obsidian core Templates syntax. A marker is `{{name}
 - `{{title}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set key=value`. `{{title}}` is the title passed to `new page`, not the file name as in Obsidian: a kind named `Résumé - {title}` gets the heading `# Talk`, not `# Résumé - Talk`.
 - `{{date}}` is `{{date:YYYY-MM-DD}}`; `{{time}}` is `{{time:HH:mm}}`. These defaults are fixed. `{{date:}}` and `{{time:}}`, with nothing after the colon, give the same defaults.
 - `{{date:FMT}}` and `{{time:FMT}}` are the same: they format the page's day with the Moment.js format `FMT`. The time is now, in local time, or 00:00 of the `--date` day.
-- A `--set` key equal to `title`, `date`, `time`, `slug` or `summary`, or starting with `date:` or `time:`, is a usage error (exit 2).
+- The built-in names `title`, `slug`, `summary`, `date` and `time` ignore case, as in Obsidian: `{{Date}}`, `{{TIME:HH}}` and `{{Title}}` are filled. A `--set` key is matched exactly: `--set color=red` fills `{{color}}`, not `{{Color}}`. The `FMT` part keeps its case: `MM` is the month, `mm` the minute.
+- A `--set` key equal to `title`, `date`, `time`, `slug` or `summary` in any case, or starting with `date:` or `time:` in any case, is a usage error (exit 2). So is a key that holds `{`, `}` or a line break: no marker name can hold it.
 
 Tokens of `FMT`, longest match first:
 

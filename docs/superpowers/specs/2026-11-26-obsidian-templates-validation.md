@@ -66,6 +66,12 @@ I only check that my transcription matches what you said.
   - **Réponse : Faithful**
 - **A14.** The Moment tokens Hmm, Hmmss, hmm and hmmss are supported: the hour (H or h), then the minutes on 2 digits, then the seconds on 2 digits for the ss forms; at 14:05:09, Hmm prints 1405 and hmmss prints 20509. *(decision of 26 Nov after the review of the pull request)*
   - **Réponse : Faithful**
+- **A15.** The built-in marker names title, slug, summary, date and time ignore case, as in Obsidian: {{Date}}, {{TIME:HH}} and {{Title}} are filled, and --set refuses those names in any case, such as Date or TIME:HH. *(decision of 26 Nov after the second review of the pull request)*
+  - Conséquence : A --set key stays exact: --set color=red fills {{color}}, not {{Color}}. A {{Title}} that a skeleton kept for the agent is now filled.
+  - **Réponse : Faithful**
+- **A16.** --set refuses with exit 2 a key that holds {, } or a line break, because no marker name can hold it. *(decision of 26 Nov after the second review of the pull request)*
+  - Conséquence : In v0.1.1, --set 'a}b=1' filled {{a}b}} with 1; that call now fails.
+  - **Réponse : Faithful**
 
 ## B — My defaults
 
