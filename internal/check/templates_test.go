@@ -36,3 +36,21 @@ func TestTemplatesIgnoresAMissingSkeletonFolder(t *testing.T) {
 		t.Fatalf("got %+v", got)
 	}
 }
+
+func TestTemplatesSkipsIgnoredSkeletonsAndGitFolders(t *testing.T) {
+	dir := t.TempDir()
+	for _, f := range []string{"_skeletons/old/a.md", "_skeletons/.git/b.md", "_skeletons/c.md"} {
+		p := filepath.Join(dir, filepath.FromSlash(f))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("{{date:Q}}"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b := &wiki.Base{Boundary: dir, Cfg: &config.Config{Root: ".", Skeletons: "_skeletons", Ignore: []string{"_skeletons/old"}}}
+	got := Templates(b)
+	if len(got) != 1 || got[0].Path != "_skeletons/c.md" {
+		t.Fatalf("got %+v", got)
+	}
+}

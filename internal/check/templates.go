@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/marker"
 	"github.com/PillowPillow/wikai/internal/wiki"
 	"golang.org/x/text/unicode/norm"
@@ -38,11 +39,21 @@ func Templates(b *wiki.Base) []wiki.Finding {
 
 func skeletonFormats(b *wiki.Base) []wiki.Finding {
 	folder := b.Cfg.RootPath(b.Cfg.Skeletons)
+	var ignore []string
+	for _, p := range b.Cfg.Ignore {
+		ignore = append(ignore, b.Cfg.RootPath(p))
+	}
 	var findings []wiki.Finding
 	_ = filepath.WalkDir(filepath.Join(b.Boundary, filepath.FromSlash(folder)), func(p string, d fs.DirEntry, err error) error {
 		rel, _ := filepath.Rel(b.Boundary, p)
 		at := norm.NFC.String(filepath.ToSlash(rel))
 		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		if d != nil && d.Name() == ".git" || config.UnderAny(at, ignore) {
+			if d != nil && d.IsDir() {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		var data []byte
