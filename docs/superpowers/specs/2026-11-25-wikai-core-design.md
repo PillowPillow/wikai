@@ -276,7 +276,7 @@ Writes the entry described under `log`. Needs at least one `--created`, `--modif
 
 Runs `git mv`, rewrites every link to the page in every page, in the index and in the log unless the log is frozen or append-only (markdown: the relative path; wikilink: the name, when the file name changes, keeping `|text` and `#anchor`), re-sorts the index group, and writes a `move` log entry. A move to a frozen path is an archive: the index line is removed. A move to the folder of another type is refused, and so are a move that would change a link in a checked frozen page and, when the index is checked, a move into a folder that has no index group. Links in frozen `checked: false` files are left as they are.
 
-### `wikai manifest hash|status|append <note> [--status S] [--pages P...] [--note T]`
+### `wikai manifest hash|status|append <note> [--status S] [--pages P,...] [--note T]`
 
 Same behaviour and same record as `manifest.py`: a JSON line `{ts, raw, sha256, status, pipeline, pages, note}`, appended under a file lock. The hash is the SHA-256 of the normalised text: BOM removed, line ends to LF, frontmatter removed, trailing `^block` ids removed, whitespace runs merged to one space, trimmed. `status` prints `new`, `unchanged <status> <path>` or `modified`.
 
