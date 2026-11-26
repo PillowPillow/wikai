@@ -1,15 +1,18 @@
 #!/bin/sh
-# Runs `wikai check` on the three reference bases with configs kept outside the repository.
-#
-# Usage: sh acceptance/run.sh
-#   WIKAI_ACCEPTANCE_CONFIGS  folder holding brain.yaml, am-home.yaml, dev-home.yaml
-#   WIKAI_BRAIN, WIKAI_AM_HOME, WIKAI_DEV_HOME  base folders
+# Base paths come only from the environment, so that no base detail lives in the repository.
 set -eu
 
+require() {
+    if [ -z "$2" ]; then
+        printf 'run.sh: %s is not set\n' "$1" >&2
+        exit 2
+    fi
+}
+require WIKAI_BRAIN "${WIKAI_BRAIN:-}"
+require WIKAI_AM_HOME "${WIKAI_AM_HOME:-}"
+require WIKAI_DEV_HOME "${WIKAI_DEV_HOME:-}"
+
 CONFIGS="${WIKAI_ACCEPTANCE_CONFIGS:-$HOME/.config/wikai-acceptance}"
-BRAIN="${WIKAI_BRAIN:-$HOME/Brain}"
-AM_HOME="${WIKAI_AM_HOME:-$HOME/Development/Pillow/am-home}"
-DEV_HOME="${WIKAI_DEV_HOME:-$HOME/Development/Digitaleo/dev-home}"
 
 cd "$(dirname "$0")/.."
 
@@ -28,8 +31,8 @@ run() {
     ./wikai check --config "$CONFIGS/$1.yaml" --dir "$2" || status=1
 }
 
-run brain "$BRAIN"
-run am-home "$AM_HOME"
-run dev-home "$DEV_HOME"
+run brain "$WIKAI_BRAIN"
+run am-home "$WIKAI_AM_HOME"
+run dev-home "$WIKAI_DEV_HOME"
 
 exit "$status"
