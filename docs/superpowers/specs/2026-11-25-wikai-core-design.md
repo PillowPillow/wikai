@@ -284,6 +284,8 @@ Same behaviour and same record as `manifest.py`: a JSON line `{ts, raw, sha256, 
 
 A Claude Code `PreToolUse` hook for `Edit`, `Write` and `NotebookEdit`: reads the event on stdin, exits 2 with a message on stderr to refuse a write to a `protected` path, to an existing file of a `frozen` path, or to an `append_only` file unless the new content starts with the current content. Exits 0 otherwise, and for a path outside the boundary.
 
+The hook applies every base that holds the target: each `wikai.yaml` above the target (its resolved path and its written path) and the base above the Claude Code project folder. It refuses when any of them refuses; an invalid `wikai.yaml` on the path refuses too. A nested `wikai.yaml` therefore never relaxes the rules of the base around it, and one hook installed for every project guards every base.
+
 When a path matches several rules, `append_only` wins, then `frozen`, then `protected`. So in Brain the agent may append to `_meta/manifest.jsonl` and add a report to `_meta/lint/`, and nothing else under `_meta`. A path listed in a frozen entry's `except` follows no frozen rule; listing it under `protected` (`10-raw/zotero`) keeps the agent out while the human and their tools write it freely.
 
 ### `wikai guard commit (--staged | <base> <head>) [--agent]`
