@@ -93,12 +93,33 @@ func TestHook(t *testing.T) {
 	}
 }
 
+func TestHookCaseVariantOfMissingGuardedPath(t *testing.T) {
+	dir := vault(t)
+	cfg := brainConfig(t)
+	cases := []struct{ tool, path, deny string }{
+		{"Write", "agents.md", "agents.md: protected"},
+		{"Write", "Agents.MD", "Agents.MD: protected"},
+		{"Write", ".CLAUDE/settings.json", ".CLAUDE/settings.json: protected"},
+		{"Write", "10-RAW/web/new.md", ""},
+		{"Write", "10-RAW/new/new.md", ""},
+	}
+	for _, c := range cases {
+		got := Hook(cfg, dir, event(c.tool, dir, dir+"/"+c.path, "x"))
+		if (c.deny == "") != (got == "") || !strings.HasPrefix(got, c.deny) {
+			t.Errorf("%s: Hook = %q, want %q", c.path, got, c.deny)
+		}
+	}
+}
+
 func TestHookCaseInsensitiveFilesystem(t *testing.T) {
 	dir := vault(t)
 	if _, err := os.Lstat(filepath.Join(dir, "claude.md")); err != nil {
 		t.Skip("case-sensitive filesystem")
 	}
 	cfg := brainConfig(t)
+	if got := Hook(cfg, dir, event("Edit", dir, dir+"/10-RAW/WEB/A.md", "")); got != "10-raw/web/a.md: frozen file, existing files are never modified" {
+		t.Errorf("10-RAW/WEB/A.md: Hook = %q", got)
+	}
 	for _, p := range []string{"claude.md", "_META/schema.md", "_Meta/new.md", "20-WIKI/../Claude.MD"} {
 		got := Hook(cfg, dir, event("Write", dir, dir+"/"+p, "x"))
 		if !strings.Contains(got, "protected") {

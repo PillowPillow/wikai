@@ -22,33 +22,41 @@ func (r Rule) String() string {
 	return [...]string{"none", "append-only", "frozen", "protected"}[r]
 }
 
+// Rules match case-insensitively on every filesystem: on a case-insensitive one, agents.md is AGENTS.md.
 func Classify(cfg *config.Config, p string) Rule {
-	p = norm.NFC.String(path.Clean(p))
-	if slices.Contains(strings.Split(p, "/"), ".git") {
+	segs := split(p)
+	if slices.ContainsFunc(segs, func(s string) bool { return strings.EqualFold(s, ".git") }) {
 		return Protected
 	}
 	for _, a := range cfg.AppendOnly {
-		if p == norm.NFC.String(cfg.RootPath(a)) {
+		if e := split(cfg.RootPath(a)); len(e) == len(segs) && hasPrefix(segs, e) {
 			return AppendOnly
 		}
 	}
 	for _, f := range cfg.Frozen {
-		if !under(p, cfg.RootPath(f.Path)) {
+		if !hasPrefix(segs, split(cfg.RootPath(f.Path))) {
 			continue
 		}
-		if !slices.ContainsFunc(f.Except, func(e string) bool { return under(p, cfg.RootPath(e)) }) {
+		if !slices.ContainsFunc(f.Except, func(e string) bool { return hasPrefix(segs, split(cfg.RootPath(e))) }) {
 			return Frozen
 		}
 	}
 	for _, e := range cfg.Protected {
-		if under(p, path.Clean(e)) {
+		if hasPrefix(segs, split(e)) {
 			return Protected
 		}
 	}
 	return None
 }
 
-func under(p, dir string) bool {
-	dir = norm.NFC.String(dir)
-	return dir == "." || p == dir || strings.HasPrefix(p, dir+"/")
+func split(p string) []string {
+	p = norm.NFC.String(path.Clean(p))
+	if p == "." {
+		return nil
+	}
+	return strings.Split(p, "/")
+}
+
+func hasPrefix(segs, prefix []string) bool {
+	return len(prefix) <= len(segs) && slices.EqualFunc(segs[:len(prefix)], prefix, strings.EqualFold)
 }

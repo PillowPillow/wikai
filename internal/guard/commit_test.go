@@ -53,6 +53,8 @@ var commitCases = []struct {
 	{"schema", []change{write("_meta/schema.md", "schema2\n")}, false, nil},
 	{"schema agent", []change{write("_meta/schema.md", "schema2\n")}, true, []Violation{{"M", "_meta/schema.md", "protected path"}}},
 	{"new raw file agent", []change{write("10-raw/web/b.md", "b\n")}, true, nil},
+	{"case variant agent", []change{write("agents.md", "x\n")}, true, []Violation{{"A", "agents.md", "protected path"}}},
+	{"case variant frozen", []change{write("10-RAW/web/b.md", "b\n"), write("10-raw/web/a.md", "a2\n")}, false, []Violation{{"M", "10-raw/web/a.md", "frozen file"}}},
 	{"sorted", []change{write("_meta/schema.md", "s\n"), write("10-raw/web/a.md", "a2\n"), write("10-raw/zotero/lib.md", "l\n")}, true, []Violation{
 		{"M", "10-raw/web/a.md", "frozen file"}, {"M", "10-raw/zotero/lib.md", "protected path"}, {"M", "_meta/schema.md", "protected path"},
 	}},

@@ -58,6 +58,7 @@ func TestHookCLI(t *testing.T) {
 		errOut           string
 	}{
 		{"protected", vault, editEvent(claude, vault), nil, 2, "CLAUDE.md: protected path, propose the change to the human\n"},
+		{"case variant of a missing protected file", vault, editEvent(filepath.Join(vault, "Agents.MD"), vault), nil, 2, "Agents.MD: protected path, propose the change to the human\n"},
 		{"allowed", vault, editEvent(filepath.Join(vault, "20-wiki/concepts/A.md"), vault), nil, 0, ""},
 		{"not json", vault, "not json", nil, 2, "error: "},
 		{"json null", vault, "null", nil, 2, "error: "},
