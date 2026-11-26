@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -205,7 +206,11 @@ func linkRewriter(b *wiki.Base, old, dest string) func(from string) func(wiki.Li
 	oldStem := strings.TrimSuffix(path.Base(old), ".md")
 	newStem := strings.TrimSuffix(path.Base(dest), ".md")
 	stemRef := newStem
-	if stemTaken(b, old, newStem) {
+	switch {
+	case b.Cfg.Links != "wikilink":
+	case oldStem != newStem && stemTaken(b, old, newStem):
+		stemRef = pathRef
+	case oldStem == newStem && !winsAfterMove(b, old, dest, newStem):
 		stemRef = pathRef
 	}
 	return func(from string) func(wiki.Link) (string, bool) {
@@ -220,7 +225,7 @@ func linkRewriter(b *wiki.Base, old, dest string) func(from string) func(wiki.Li
 					return "", false
 				case strings.Contains(l.Target, "/"):
 					return pathRef, true
-				case oldStem != newStem:
+				case stemRef != oldStem:
 					return stemRef, true
 				}
 				return "", false
@@ -238,6 +243,14 @@ func linkRewriter(b *wiki.Base, old, dest string) func(from string) func(wiki.Li
 			return "", false
 		}
 	}
+}
+
+func winsAfterMove(b *wiki.Base, old, dest, stem string) bool {
+	files := maps.Clone(b.Files)
+	delete(files, old)
+	files[dest] = true
+	p, _ := wiki.ResolveWikilinkIn(files, stem)
+	return p == dest
 }
 
 func stemTaken(b *wiki.Base, old, stem string) bool {

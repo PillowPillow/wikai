@@ -2,6 +2,7 @@ package write
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -333,5 +334,37 @@ func TestMoveVaultFlatIndexStemCollision(t *testing.T) {
 	want := "# Index\n\n- [[20-wiki/concepts/LLM evals]] — e\n- [[Alpha]] — a\n- [[Harness]] — h\n- [[LLM evals]] — other\n"
 	if got := read(t, dir, "index.md"); got != want {
 		t.Fatalf("index = %q", got)
+	}
+}
+
+func TestMoveVaultFolderOnlyKeepsStemLinksOnMovedPage(t *testing.T) {
+	b, dir := vaultRepo(t, map[string]string{".obsidian/plugins/x/Evals.md": "other\n"})
+	dest := "20-wiki/concepts/deep/Evals.md"
+	if _, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: dest, NoLog: true}); err != nil {
+		t.Fatal(err)
+	}
+	b, _ = loadBase(t, dir)
+	for _, p := range []string{"20-wiki/concepts/Harness.md", "index.md"} {
+		for _, l := range wiki.Links(b.Cfg.Links, read(t, dir, p)) {
+			if !strings.EqualFold(path.Base(l.Target), "Evals") {
+				continue
+			}
+			if target, r := b.Resolve(p, l); r != wiki.Resolved || target != dest {
+				t.Errorf("%s: [[%s]] resolves to %q (%v), want %s", p, l.Target, target, r, dest)
+			}
+		}
+	}
+}
+
+func TestMoveVaultKeepsLinksToAnotherFileOfTheOldStem(t *testing.T) {
+	for _, dest := range []string{"20-wiki/resumes/Evals.md", "20-wiki/concepts/LLM evals.md"} {
+		b, dir := vaultRepo(t, map[string]string{"20-wiki/Evals.md": "---\ntype: wiki\n---\n"})
+		if _, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: dest, NoLog: true}); err != nil {
+			t.Fatal(err)
+		}
+		want := "[[Evals]], [[Evals#^b1|les evals]], [[" + strings.TrimSuffix(dest, ".md") + "]], `[[Evals]]`, ![[Evals]]."
+		if got := read(t, dir, "20-wiki/concepts/Harness.md"); !strings.Contains(got, want) || !strings.Contains(got, "related: \"[[Evals]]\"") {
+			t.Errorf("%s: Harness = %q", dest, got)
+		}
 	}
 }
