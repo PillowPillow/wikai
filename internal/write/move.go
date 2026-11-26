@@ -120,8 +120,6 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 		text := wiki.RewriteLinks(style, d.Text, rewrite(d.Path))
 		switch {
 		case text == d.Text:
-		case d.OutsideOnly:
-			return MoveResult{}, exit.Refused("%s is frozen and holds a link the move would break", d.Path)
 		case d.Path == b.LogPath() && !frozenDest(b, d.Path) && !appendOnly(b, d.Path):
 			changes[d.Path] = text
 		}

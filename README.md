@@ -21,7 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/PillowPillow/wikai/main/install.sh 
 - `wikai check [--base <ref>] [--json]`: run every check the config turns on and exit 1 on findings.
 - `wikai new page <kind> <title> --summary <text>`: create a page from its skeleton and add its index line; refused when another page has the same name.
 - `wikai new log <operation> <title>`: write a log entry.
-- `wikai move <old> <new>`: `git mv` a page and rewrite every link to it; refused when it would change a link in a frozen file.
+- `wikai move <old> <new>`: `git mv` a page and rewrite every link to it; refused when it would change a link in a checked frozen page.
 - `wikai manifest hash|status|append <note>`: hash a note and read or append its manifest record.
 - `wikai guard hook`: Claude Code `PreToolUse` hook that refuses writes to protected, frozen and append-only paths.
 - `wikai guard commit (--staged | <base> <head>) [--agent]`: refuse a change that breaks a frozen or append-only file, for a pre-commit hook or CI.
