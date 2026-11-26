@@ -87,9 +87,9 @@ func newManifest(env Env) *cobra.Command {
 	var status, note string
 	var pages []string
 	appendCmd := &cobra.Command{
-		Use:   "append <note> --status S [--pages P...] [--note T]",
+		Use:   "append <note> --status S [--pages P,...] [--note T]",
 		Short: "Record a note in the manifest",
-		Args:  cobra.MinimumNArgs(1),
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			t, err := manifestSetup(env, cmd, args[0])
 			if err != nil {
@@ -111,7 +111,7 @@ func newManifest(env Env) *cobra.Command {
 				SHA256:   digest,
 				Status:   status,
 				Pipeline: t.b.Cfg.Manifest.Pipeline,
-				Pages:    append(slices.Clone(pages), args[1:]...),
+				Pages:    pages,
 				Note:     note,
 			})
 			if err != nil {
@@ -122,7 +122,7 @@ func newManifest(env Env) *cobra.Command {
 		},
 	}
 	appendCmd.Flags().StringVar(&status, "status", "", "status of the note")
-	appendCmd.Flags().StringArrayVar(&pages, "pages", nil, "page written from the note; extra arguments after the note are pages too")
+	appendCmd.Flags().StringSliceVar(&pages, "pages", nil, "pages written from the note, repeated or comma-separated")
 	appendCmd.Flags().StringVar(&note, "note", "", "free note")
 	cmd.AddCommand(appendCmd)
 	return cmd

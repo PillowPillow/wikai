@@ -34,7 +34,20 @@ func TestManifestCLI(t *testing.T) {
 		t.Fatal("manifest written on usage error")
 	}
 
-	code, out, errOut := run(t, dir, "manifest", "append", "10-raw/n.md", "--status", "integrated", "--pages", "A", "B", "--note", "ok")
+	for _, args := range [][]string{
+		{"manifest", "append", "10-raw/n.md", "--status", "integrated", "--pages", "A", "B"},
+		{"manifest", "append", "--pages", "wiki/concepts/X.md", "wiki/concepts/Y.md", "10-raw/n.md", "--status", "integrated"},
+	} {
+		code, out, errOut := run(t, dir, args...)
+		if code != 2 || out != "" || errOut == "" {
+			t.Fatalf("%v: code=%d out=%q err=%q", args, code, out, errOut)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dir, "_meta", "manifest.jsonl")); err == nil {
+		t.Fatal("manifest written on extra positional")
+	}
+
+	code, out, errOut := run(t, dir, "manifest", "append", "10-raw/n.md", "--status", "integrated", "--pages", "A", "--pages", "B", "--note", "ok")
 	if code != 0 || errOut != "" {
 		t.Fatalf("code=%d err=%q", code, errOut)
 	}
@@ -45,6 +58,14 @@ func TestManifestCLI(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join(dir, "_meta", "manifest.jsonl"))
 	if err != nil || string(data) != out {
 		t.Fatalf("file=%q err=%v", data, err)
+	}
+
+	code, out2, errOut := run(t, dir, "manifest", "append", "10-raw/n.md", "--status", "integrated", "--pages", "A,B", "--note", "ok")
+	if code != 0 || errOut != "" || !strings.Contains(out2, `"pages":["A","B"]`) {
+		t.Fatalf("code=%d out=%q err=%q", code, out2, errOut)
+	}
+	if data, _ := os.ReadFile(filepath.Join(dir, "_meta", "manifest.jsonl")); string(data) != out+out2 {
+		t.Fatalf("file=%q", data)
 	}
 
 	code, hashOut, _ := run(t, dir, "manifest", "hash", "10-raw/n.md")
