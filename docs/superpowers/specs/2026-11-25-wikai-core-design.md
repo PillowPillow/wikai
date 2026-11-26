@@ -269,7 +269,7 @@ or `OK: 148 pages`. `--json` prints the array `[{"check", "path", "message"}]`, 
 Skeleton markers follow the Obsidian core Templates syntax. A marker is `{{name}}`; the name ends at the first `}}` and holds no `{`, `}` or line break. The skeleton is read once, from start to end: a filled value is never read again, so a `--summary` or `--set` value that holds `{{date}}` stays as written.
 
 - `{{title}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set key=value`. `{{title}}` is the title passed to `new page`, not the file name as in Obsidian: a kind named `Résumé - {title}` gets the heading `# Talk`, not `# Résumé - Talk`.
-- `{{date}}` is `{{date:YYYY-MM-DD}}`; `{{time}}` is `{{time:HH:mm}}`. These defaults are fixed.
+- `{{date}}` is `{{date:YYYY-MM-DD}}`; `{{time}}` is `{{time:HH:mm}}`. These defaults are fixed. `{{date:}}` and `{{time:}}`, with nothing after the colon, give the same defaults.
 - `{{date:FMT}}` and `{{time:FMT}}` are the same: they format the page's day with the Moment.js format `FMT`. The time is now, in local time, or 00:00 of the `--date` day.
 - A `--set` key equal to `title`, `date`, `time`, `slug` or `summary`, or starting with `date:` or `time:`, is a usage error (exit 2).
 
@@ -283,7 +283,8 @@ Tokens of `FMT`, longest match first:
 | `MMM` `MMMM` | month name, short and long | `s` `ss` | second |
 | `D` `DD` | day of month | `A` `a` | `AM`/`PM`, `am`/`pm` |
 | `Do` | day of month, ordinal | `W` `WW` | ISO week number |
-| `dd` `ddd` `dddd` | weekday name, minimal, short, long | | |
+| `dd` `ddd` `dddd` | weekday name, minimal, short, long | `Hmm` `Hmmss` | `H` then `mm`, then `ss` |
+| | | `hmm` `hmmss` | `h` then `mm`, then `ss` |
 
 Two-letter forms are zero-padded. Names and ordinals follow `locale`: `en` gives `January`, `Jan`, `Sunday`, `Sun`, `Su`, `1st`; `fr` gives `janvier`, `janv.`, `dimanche`, `dim.`, `di`, `1er` (then `2`, `3`…), as Moment's `fr` locale. `A` and `a` are the same in both locales. Text inside `[…]` and a character after `\` are written as they are. Any other Moment token (`Q`, `DDD`, `w`, `X`, `L`, `Z`…) is a usage error (exit 2) that names the skeleton and the token. Any other character, such as `-`, `/`, `:` or the `T` of `YYYY-MM-DDTHH:mm`, is written as it is.
 
