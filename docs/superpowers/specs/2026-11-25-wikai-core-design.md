@@ -274,7 +274,7 @@ Writes the entry described under `log`. Needs at least one `--created`, `--modif
 
 ### `wikai move <old> <new> [--no-log] [--note T]... [--date D]`
 
-Runs `git mv`, rewrites every link to the page in every page, in the index and in the log unless the log is frozen or append-only (markdown: the relative path; wikilink: the name, when the file name changes, keeping `|text` and `#anchor`), re-sorts the index group, and writes a `move` log entry. A move to a frozen path is an archive: the index line is removed. A move to the folder of another type is refused, and so are a move that would change a link in a checked frozen page and, when the index is checked, a move into a folder that has no index group. Links in frozen `checked: false` files are left as they are.
+Runs `git mv`, rewrites every link to the page in every page, in the index and in the log unless the log is frozen or append-only (markdown: the relative path; wikilink: the name, when the file name changes, keeping `|text` and `#anchor`), re-sorts the index group, and writes a `move` log entry. A move to a frozen path is an archive: the index line is removed. A move to the folder of another type is refused, and so are a move that would change a link in a checked frozen page and, when the index is checked, a move into a folder that has no index group, and a move to a folder spelled in another case than the folder on disk. Links in frozen `checked: false` files are left as they are.
 
 ### `wikai manifest hash|status|append <note> [--status S] [--pages P,...] [--note T]`
 
