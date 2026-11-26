@@ -5,3 +5,27 @@ permissions:
 jobs:
   gates:
     uses: ./.github/workflows/gates.yml
+
+  install-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: smoke against the latest release
+        run: |
+          # The tag is read before and after the install, so a release landing mid-run cannot fail the assert.
+          before=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/PillowPillow/wikai/releases/latest)
+          before="${before##*/}"
+          WIKAI_INSTALL_DIR="$RUNNER_TEMP/bin" sh install.sh
+          after=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/PillowPillow/wikai/releases/latest)
+          after="${after##*/}"
+          got=$("$RUNNER_TEMP/bin/wikai" --version)
+          if [ "$got" != "$before" ] && [ "$got" != "$after" ]; then
+            echo "wikai --version answered '$got', expected '$before' or '$after'"
+            exit 1
+          fi
+      - name: refusal paths
+        run: |
+          if WIKAI_INSTALL_DIR="$RUNNER_TEMP/neg" WIKAI_VERSION=v9.9.9 sh install.sh; then
+            echo "expected a refusal for a nonexistent tag"; exit 1
+          fi
+          test ! -e "$RUNNER_TEMP/neg/wikai"
