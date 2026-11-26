@@ -7,7 +7,7 @@ Branch: `feat/obsidian-templates`, one PR. The human tags v0.2.0.
 
 - New package `internal/marker`, one deep module:
   - `Fill(text string, values map[string]string, day time.Time, locale string) (string, error)`: one pass from start to end; a filled value is never read again.
-  - `Check(text string) []string`: the unsupported tokens of every `{{date:FMT}}` and `{{time:FMT}}`.
+  - `Check(text string) []error`: the unsupported tokens of every `{{date:FMT}}` and `{{time:FMT}}`.
   - `Reserved(key string) bool`: the `--set` keys that collide with a built-in value.
 - The format tokenizer ports Moment's `formattingTokens` regex (moment `src/lib/format/format.js`, `develop`) and its `localFormattingTokens` (`L`, `l` forms). For each match: brackets or `\` give literal text; a supported token is formatted; any other Moment token is an error; the single-character fallback is literal. Numbers come from `time.Format` with the mapped Go layout, one token at a time; names, `Do` and `dd` come from a locale table (`en`, `fr`, strings from moment `src/locale/fr.js`).
 - `write.NewPage` replaces its `strings.NewReplacer` with `marker.Fill`; `preset.Init` uses `Fill` with no values for files other than skeletons; `check.Templates` runs `Check` on every skeleton.
