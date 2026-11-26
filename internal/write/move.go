@@ -26,8 +26,9 @@ type MoveOpts struct {
 }
 
 type MoveResult struct {
-	Modified []string
-	Log      string
+	Modified     []string
+	IndexUpdated bool
+	Log          string
 }
 
 func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
@@ -112,7 +113,8 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 			return MoveResult{}, err
 		}
 	}
-	res := MoveResult{Modified: modified}
+	_, indexUpdated := changes[b.IndexPath()]
+	res := MoveResult{Modified: modified, IndexUpdated: indexUpdated}
 	if writeLog {
 		logOpts.Modified = modified
 		var err error

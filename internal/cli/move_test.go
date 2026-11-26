@@ -74,3 +74,26 @@ func TestMoveCLINotGit(t *testing.T) {
 		t.Fatalf("code=%d err=%q", code, errOut)
 	}
 }
+
+func TestMoveCLIIndexUnchanged(t *testing.T) {
+	dir := t.TempDir()
+	testrepo.Git(t, dir, "init", "-q", "-b", "main")
+	for _, args := range [][]string{
+		{"init", "--preset", "obsidian-vault"},
+		{"new", "page", "concept", "Alpha", "--summary", "x"},
+	} {
+		if code, _, errOut := run(t, dir, args...); code != 0 {
+			t.Fatalf("%v: %q", args, errOut)
+		}
+	}
+	testrepo.Git(t, dir, "add", "-A")
+	testrepo.Git(t, dir, "commit", "-q", "-m", "init")
+	index := readFile(t, filepath.Join(dir, "index.md"))
+	code, out, errOut := run(t, dir, "move", "wiki/concepts/Alpha.md", "wiki/concepts/deep/Alpha.md", "--no-log")
+	if code != 0 || out != "moved wiki/concepts/Alpha.md to wiki/concepts/deep/Alpha.md; links rewritten in 0 page(s)\n" {
+		t.Fatalf("code=%d out=%q err=%q", code, out, errOut)
+	}
+	if got := readFile(t, filepath.Join(dir, "index.md")); got != index {
+		t.Fatalf("index changed: %q", got)
+	}
+}

@@ -40,7 +40,7 @@ func newMove(env Env) *cobra.Command {
 				return err
 			}
 			line := fmt.Sprintf("moved %s to %s; links rewritten in %d page(s)", old, dest, len(res.Modified))
-			if b.Cfg.Index != nil {
+			if res.IndexUpdated {
 				line += "; index updated"
 			}
 			fmt.Fprintln(env.Stdout, line)
