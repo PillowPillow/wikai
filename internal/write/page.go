@@ -112,7 +112,7 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 			values[k] = v
 		}
 	}
-	text, err := marker.Fill(string(data), values, day)
+	text, err := marker.Fill(string(data), values, day, b.Cfg.Locale)
 	if err != nil {
 		return "", exit.Usage("skeleton %s: %v", skeleton, err)
 	}
