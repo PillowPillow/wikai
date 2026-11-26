@@ -8,6 +8,7 @@ import (
 
 	"github.com/PillowPillow/wikai/internal/marker"
 	"github.com/PillowPillow/wikai/internal/wiki"
+	"golang.org/x/text/unicode/norm"
 )
 
 func Templates(b *wiki.Base) []wiki.Finding {
@@ -47,7 +48,7 @@ func skeletonFormats(b *wiki.Base) []wiki.Finding {
 		}
 		rel, _ := filepath.Rel(b.Boundary, p)
 		for _, e := range marker.Check(string(data)) {
-			findings = append(findings, wiki.Finding{Check: "templates", Path: filepath.ToSlash(rel), Message: e.Error()})
+			findings = append(findings, wiki.Finding{Check: "templates", Path: norm.NFC.String(filepath.ToSlash(rel)), Message: e.Error()})
 		}
 		return nil
 	})
