@@ -25,6 +25,7 @@ func TestFormatNumericTokensAndLiterals(t *testing.T) {
 		{`\H\h HH`, friday, "Hh 14"},
 		{"Y YYY", friday, "Y 26Y"},
 		{"Hmm hmmss", friday, "1405 20509"},
+		{"W| w|", friday, "W| w|"},
 		{"[2 HH", friday, "[2 14"},
 	} {
 		got, err := Format(c.format, c.at, "en")
