@@ -3,9 +3,11 @@ version: 2
 project_name: wikai
 
 release:
+  # explicit forge: goreleaser would otherwise infer it from the git remote
   github:
     owner: PillowPillow
     name: wikai
+  # the tag must be made with `git tag -a --cleanup=verbatim` so its Markdown headings survive into TagBody
   header: |
     {{ .TagBody }}
 
@@ -43,6 +45,8 @@ homebrew_casks:
     description: "Check, write and guard LLM wikis from one config file"
     url:
       template: "https://github.com/PillowPillow/wikai/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    # the binaries are not notarized: without dropping the quarantine flag, Gatekeeper blocks them
+    # Homebrew and goreleaser share the {{ }} delimiters, so staged_path is escaped as a goreleaser string
     custom_block: |
       postflight_steps do
         on_macos do

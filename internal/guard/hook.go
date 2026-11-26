@@ -69,9 +69,7 @@ func Hook(cfg *config.Config, boundary string, ev Event) (deny string) {
 	return ""
 }
 
-// Resolves p as the kernel would: symlinks are followed before "..", missing components are kept
-// as given, and each existing component takes its on-disk spelling (case-insensitive filesystems).
-// A folder that cannot be listed fails the resolution only inside strict, where the spelling decides a rule.
+// Resolves as the kernel would (symlinks before "..", on-disk spelling); an unlistable folder fails only inside strict, where spelling decides a rule.
 func resolve(p, strict string) (string, error) {
 	if !filepath.IsAbs(p) {
 		return "", fmt.Errorf("%s is not absolute", p)

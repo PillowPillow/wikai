@@ -13,13 +13,11 @@ import (
 
 func nfc(s string) string { return norm.NFC.String(s) }
 
-// Reports whether the index holds a line for the page: the index is on, the page is in index.include and a group applies.
 func Indexed(b *wiki.Base, pagePath string) bool {
 	_, _, ok := indexGroup(b, pagePath)
 	return ok
 }
 
-// Root-relative folder of the page, and whether index.include covers it.
 func indexDir(b *wiki.Base, pagePath string) (string, bool) {
 	idx := b.Cfg.Index
 	if idx == nil {
@@ -40,7 +38,6 @@ func indexDir(b *wiki.Base, pagePath string) (string, bool) {
 	return dir, true
 }
 
-// Usage error when the index is checked and the page is included but no group applies.
 func RequireGroup(b *wiki.Base, pagePath string) error {
 	dir, included := indexDir(b, pagePath)
 	if included && b.Cfg.Index.Check && !Indexed(b, pagePath) {

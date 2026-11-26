@@ -73,6 +73,7 @@ curl -fsSL -o "$tmp/$archive" "$base_url/$archive" \
 curl -fsSL -o "$tmp/checksums.txt" "$base_url/checksums.txt" \
     || fail "download failed for $base_url/checksums.txt"
 
+# checksums.txt comes from the same release: it proves integrity, not authenticity
 grep " $archive\$" "$tmp/checksums.txt" > "$tmp/expected.txt" \
     || fail "checksums.txt of $tag has no entry for $archive — the release layout changed; report this at https://github.com/$REPO/issues"
 case "$checksum_tool" in

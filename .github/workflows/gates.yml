@@ -1,5 +1,7 @@
 name: gates
 on: workflow_call
+permissions:
+  contents: read
 jobs:
   gates:
     runs-on: ubuntu-latest
