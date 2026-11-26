@@ -31,7 +31,11 @@ Exit codes: 0 success, 1 refused or findings, 2 usage or environment error.
 
 ## `wikai.yaml`
 
-The file sits at the root of the base; commands find it by walking up from the current folder. Example for a home repository:
+The file sits at the root of the base; commands find it by walking up from the current folder. Its folder is the boundary.
+
+Path rule: `root` and `protected` are relative to the boundary; every other path in the file is relative to `root`. Paths that `wikai` prints or records are relative to the boundary. Path arguments on the command line are resolved from the current folder.
+
+Example for a home repository:
 
 ```yaml
 version: 1
@@ -85,6 +89,7 @@ frozen:
   - path: archive
     checked: false             # its files are not pages; only "link leaves the base" applies
   - path: log
+protected: [wikai.yaml, .claude] # relative to the boundary, not to root
 base_branch: main
 
 citations:

@@ -77,7 +77,7 @@ Everything below that is not in this list is the author's call and is open to co
 
 ## `wikai.yaml`
 
-The file sits at the root of the base (the git repository root for a home, the vault root for Brain). Its folder is the **boundary**: no link may leave it. A command finds the file by walking up from the current folder. `--config <file>` reads another file; `--dir <folder>` then names the boundary (default with `--config`: the current folder). Paths in the config and in the manifest are relative to the boundary. An unknown key is an error, not a warning.
+The file sits at the root of the base (the git repository root for a home, the vault root for Brain). Its folder is the **boundary**: no link may leave it. A command finds the file by walking up from the current folder. `--config <file>` reads another file; `--dir <folder>` then names the boundary (default with `--config`: the current folder). `root` and `protected` are relative to the boundary; every other path in the config is relative to `root`. Paths that `wikai` prints or records (findings, created files, the manifest `raw`) are relative to the boundary. Path arguments on the command line are resolved from the current folder. An unknown key is an error, not a warning.
 
 Example for a home:
 
