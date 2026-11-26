@@ -1,6 +1,6 @@
 # wikai core — design
 
-Date: 2026-11-25. Status: approved by checklist on 2026-11-25 (`2026-11-25-wikai-core-validation.md`); the checklist wins over this document.
+Date: 2026-11-25. Status: approved by checklist on 2026-11-25 (`2026-11-25-wikai-core-validation.md`); the checklist wins over this document. Skeleton date and time markers (v0.2.0): approved by checklist on 2026-11-26 (`2026-11-26-obsidian-templates-validation.md`).
 
 ## Intent
 
@@ -224,7 +224,7 @@ protected:                     # paths the agent never writes (guard)
 
 ### Meaning of each block
 
-- **`root`, `ignore`** — `wikai` reads markdown files under `root`, minus `ignore` and `.git`. Every such file is a **page** and receives every check, with these exceptions: files of a frozen path marked `checked: false`; log entries in `dir` mode; skeletons; the index and the log file when they carry no frontmatter (their links are still checked; with a frontmatter they are pages, as in Brain where they are `type: meta`). The page count printed by `check` is the number of pages.
+- **`root`, `ignore`** — `wikai` reads markdown files under `root`, minus `ignore` and `.git`. Every such file is a **page** and receives every check, with these exceptions: files of a frozen path marked `checked: false`; log entries in `dir` mode; skeletons (only their date and time markers are checked, see `template_markers`); the index and the log file when they carry no frontmatter (their links are still checked; with a frontmatter they are pages, as in Brain where they are `type: meta`). The page count printed by `check` is the number of pages.
 - **`links`** — `markdown`: `[text](relative/path.md#anchor)`, resolved from the page's folder; the target must be a file tracked by git (or staged), with the exact case; the anchor must match a heading (lowercase, letters and digits kept, spaces to `-`, repeated headings take `-1`, `-2`). `wikilink`: `[[Name]]`, `[[Name#^block]]`, `[[Name|text]]`, resolved by file name or path suffix without case, in NFC, shortest path wins; a `^block` anchor must exist in the target. Links inside code fences and code spans are ignored in both styles. Wikilinks in frontmatter count.
 - **`title`** — what names a page for duplicate detection and for index lines.
 - **`frontmatter`** — per key: `required`, `format` (`date` = `YYYY-MM-DD`, `list`, text by default), `values` (allowed values), `non_empty`, `empty_allowed`. The top-level block applies to every page; a type adds its own, and so does each kind whose `set` values the page carries. For a key that several layers name, the rule of the last layer replaces the earlier ones whole, in the order top level, type, kinds by name: a type can relax a top-level rule. Frontmatter is parsed as YAML; invalid YAML is a finding.
@@ -236,7 +236,7 @@ protected:                     # paths the agent never writes (guard)
 - **`frozen`, `append_only`, `base_branch`** — a frozen file may be added, never modified, renamed or deleted. An append-only file may only grow at its end. The reference is the merge-base of `HEAD` and `origin/<base_branch>`; `HEAD` when the repository has no remote; `--base <ref>` overrides.
 - **`citations`** — parses `(source: X)` outside code. Each cited `X` must be in the frontmatter list, and each list entry must be cited. With `code: true`, a citation shaped `<repo>@<sha>:<path>` must be `<repo>@<sha7>:<path>#L<start>[-L<end>]` with a valid range, and matches the list entry without its range. A citation written as a markdown link matches by its target.
 - **`orphans`** — a page in `scope` (default: every type folder) with no link from another page is a finding. `ignore_links_from` and `ignore_links_from_types` do not count as inbound; `exempt_types` are never orphans. The index never counts.
-- **`template_markers`** — these strings left in a page are a finding; in a frozen path, only the frontmatter is searched.
+- **`template_markers`** — these strings left in a page are a finding; in a frozen path, only the frontmatter is searched. The `templates` check also reads every skeleton: a `{{date:FMT}}` or `{{time:FMT}}` that `new page` would refuse is a finding on the skeleton's path, so CI finds it before the first page of that kind. Skeletons still do not count as pages.
 - **`unchecked_frontmatter`** — folders whose pages skip the frontmatter and type rules; their links are still checked.
 - **`manifest`** — see `wikai manifest`.
 - **`protected`** — see `wikai guard`.
@@ -262,11 +262,32 @@ or `OK: 148 pages`. `--json` prints the array `[{"check", "path", "message"}]`, 
 ### `wikai new page <kind> <title> --summary <text> [--slug S] [--date D] [--set key=value]...`
 
 1. Refuses when the file exists, when the new page's title (its file name under `title: filename`) is the title or an alias of another page (it names that page), or, with wikilink links, when another file has the same name.
-2. Copies the kind's skeleton and fills it: `{{title}}`, `{{date}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set`. Writes the `set` values of the kind. Fills required `date` keys left empty, except those marked `empty_allowed`. An empty section receives the empty-section text.
+2. Copies the kind's skeleton and fills its markers (see below). Writes the `set` values of the kind. Fills required `date` keys left empty, except those marked `empty_allowed`. An empty section receives the empty-section text.
 3. Adds the index line.
 4. Prints the created path and the next steps (fill the sections, link the page, write the log entry).
 
-A `{{…}}` that no variable fills stays in the page for the agent; `template_markers` reports it until it is replaced.
+Skeleton markers follow the Obsidian core Templates syntax. A marker is `{{name}}`; the name ends at the first `}}` and holds no `{`, `}` or line break. The skeleton is read once, from start to end: a filled value is never read again, so a `--summary` or `--set` value that holds `{{date}}` stays as written.
+
+- `{{title}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set key=value`.
+- `{{date}}` is `{{date:YYYY-MM-DD}}`; `{{time}}` is `{{time:HH:mm}}`. These defaults are fixed.
+- `{{date:FMT}}` and `{{time:FMT}}` are the same: they format the page's day with the Moment.js format `FMT`. The time is now, in local time, or 00:00 of the `--date` day.
+- A `--set` key equal to `title`, `date`, `time`, `slug` or `summary`, or starting with `date:` or `time:`, is a usage error (exit 2).
+
+Tokens of `FMT`, longest match first:
+
+| Token | Output | Token | Output |
+|---|---|---|---|
+| `YYYY` `YY` | year, 4 and 2 digits | `H` `HH` | hour 0–23 |
+| `GGGG` | ISO week year | `h` `hh` | hour 1–12 |
+| `M` `MM` | month number | `m` `mm` | minute |
+| `MMM` `MMMM` | month name, short and long | `s` `ss` | second |
+| `D` `DD` | day of month | `A` `a` | `AM`/`PM`, `am`/`pm` |
+| `Do` | day of month, ordinal | `W` `WW` | ISO week number |
+| `dd` `ddd` `dddd` | weekday name, minimal, short, long | | |
+
+Two-letter forms are zero-padded. Names and ordinals follow `locale`: `en` gives `January`, `Jan`, `Sunday`, `Sun`, `Su`, `1st`; `fr` gives `janvier`, `janv.`, `dimanche`, `dim.`, `di`, `1er` (then `2`, `3`…), as Moment's `fr` locale. `A` and `a` are the same in both locales. Text inside `[…]` and a character after `\` are written as they are. Any other Moment token (`Q`, `DDD`, `w`, `X`, `L`, `Z`…) is a usage error (exit 2) that names the skeleton and the token. Any other character, such as `-`, `/`, `:` or the `T` of `YYYY-MM-DDTHH:mm`, is written as it is.
+
+A `{{…}}` with any other name stays in the page for the agent; `template_markers` reports it until it is replaced.
 
 ### `wikai new log <operation> <title> [--slug S] [--created P]... [--modified P]... [--note T]... [--date D]`
 
@@ -294,7 +315,7 @@ For a pre-commit hook or CI: refuses a change that modifies, renames or deletes 
 
 ### `wikai init [dir] --preset home-repo|obsidian-vault`
 
-Writes `wikai.yaml`, the type folders, one skeleton per kind, an empty index and the log location. Refuses to overwrite an existing `wikai.yaml`. It writes no agent contract and no procedure: those come with the skills of project 4.
+Writes `wikai.yaml`, the type folders, one skeleton per kind, an empty index and the log location. The date and time markers of the files other than skeletons are filled with today, as `new page` fills them. Refuses to overwrite an existing `wikai.yaml`. It writes no agent contract and no procedure: those come with the skills of project 4.
 
 ## Structure of the code
 
@@ -328,7 +349,7 @@ Each check is a function `(Base, Config) -> []Finding`, tested alone.
 - Frontmatter goes through a YAML parser instead of the two hand-written ones. A page the old parsers accepted may be invalid YAML; the acceptance run shows any such page, and project 3 decides what to do with it.
 - The frozen check uses one rule for all bases (merge-base with `origin/<base_branch>`). Brain's script compared the working tree to `HEAD` by default; the new rule also catches a change committed locally and not pushed.
 - `move` accepts an archive move from any type, where `new.py` allowed it from `designs/` only.
-- Skeletons use `{{title}}`, `{{date}}`, `{{slug}}`, `{{summary}}`. The current ones (`# <placeholder>` and empty `created:` in the homes, `{{AAAA-MM-JJ}}` in Brain) are rewritten in project 3; `wikai` does not read the old forms.
+- Skeletons use `{{title}}`, `{{date}}`, `{{time}}`, `{{date:FMT}}`, `{{time:FMT}}`, `{{slug}}`, `{{summary}}` (Obsidian core Templates; Templater `<% %>` is not run). The current ones (`# <placeholder>` and empty `created:` in the homes, `{{AAAA-MM-JJ}}` in Brain) are rewritten in project 3; `wikai` does not read the old forms.
 - `new.py page repo --origin <url>` derived the title and the file name from the git origin. Here a repo page is created with `--set origin=<url>` and an explicit title; the origin-aware command belongs to project 2.
 - `base_branch` is one name per base; dev-home sets `master`.
 - Code citations are on per base; dev-home has them off today. Project 3 decides whether to turn them on.
