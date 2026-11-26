@@ -1,6 +1,7 @@
 package check
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -39,16 +40,28 @@ func skeletonFormats(b *wiki.Base) []wiki.Finding {
 	folder := b.Cfg.RootPath(b.Cfg.Skeletons)
 	var findings []wiki.Finding
 	_ = filepath.WalkDir(filepath.Join(b.Boundary, filepath.FromSlash(folder)), func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || !strings.HasSuffix(p, ".md") {
-			return nil
-		}
-		data, err := os.ReadFile(p)
-		if err != nil {
-			return nil
-		}
 		rel, _ := filepath.Rel(b.Boundary, p)
+		at := norm.NFC.String(filepath.ToSlash(rel))
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		var data []byte
+		if err == nil {
+			if d.IsDir() || !strings.HasSuffix(p, ".md") {
+				return nil
+			}
+			data, err = os.ReadFile(p)
+		}
+		if err != nil {
+			var pe *fs.PathError
+			if errors.As(err, &pe) {
+				err = pe.Err
+			}
+			findings = append(findings, wiki.Finding{Check: "templates", Path: at, Message: "not readable: " + err.Error()})
+			return nil
+		}
 		for _, e := range marker.Check(string(data)) {
-			findings = append(findings, wiki.Finding{Check: "templates", Path: norm.NFC.String(filepath.ToSlash(rel)), Message: e.Error()})
+			findings = append(findings, wiki.Finding{Check: "templates", Path: at, Message: e.Error()})
 		}
 		return nil
 	})
