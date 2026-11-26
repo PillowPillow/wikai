@@ -13,7 +13,7 @@ var (
 	momentTokens = regexp.MustCompile(`(\[[^\[]*\])|(\\e)|(\\)?(eHHmm|[Hh]mm(ss)?|Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|Qo?|N{1,5}|YYYYYY|YYYYY|YYYY|YY|y{2,4}|yo?|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|kk?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?|.)`)
 	localTokens  = regexp.MustCompile(`(\[[^\[]*\])|(\\)?(LTS|LT|LL?L?L?|l{1,4})`)
 	// Moment has no format function for the "w|" and "W|" that its [o|w] class matches, so it prints them as written.
-	isToken = regexp.MustCompile(`^(?:eHHmm|[Hh]mm(ss)?|Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[ow]?|W[oW]?|Qo?|N{1,5}|YYYYYY|YYYYY|YYYY|YY|y{2,4}|yo?|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|kk?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?)$`)
+	isToken = regexp.MustCompile(`^(?:Y|eHHmm|[Hh]mm(ss)?|Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[ow]?|W[oW]?|Qo?|N{1,5}|YYYYYY|YYYYY|YYYY|YY|y{2,4}|yo?|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|kk?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?)$`)
 )
 
 type UnsupportedError struct {
@@ -102,6 +102,11 @@ func token(tok string, at time.Time, locale string) (string, bool) {
 		return strconv.Itoa(week), true
 	case "WW":
 		return fmt.Sprintf("%02d", week), true
+	case "Y":
+		if y := at.Year(); y > 9999 {
+			return "+" + strconv.Itoa(y), true
+		}
+		return fmt.Sprintf("%04d", at.Year()), true
 	case "GGGG":
 		return fmt.Sprintf("%04d", year), true
 	case "Hmm", "Hmmss", "hmm", "hmmss":
@@ -130,7 +135,7 @@ func Format(format string, at time.Time, locale string) (string, error) {
 		case m[2] != "":
 			b.WriteString("e")
 		case m[3] != "" || !isToken.MatchString(m[4]):
-			b.WriteString(m[4])
+			b.WriteString(strings.ReplaceAll(m[0], `\`, ""))
 		default:
 			s, ok := token(m[4], at, locale)
 			if !ok {
