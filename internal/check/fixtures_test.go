@@ -26,8 +26,8 @@ func TestFixtures(t *testing.T) {
 			dirs++
 		}
 	}
-	if dirs != 51 {
-		t.Errorf("fixture folder holds %d fixtures, want 51", dirs)
+	if dirs != 53 {
+		t.Errorf("fixture folder holds %d fixtures, want 53", dirs)
 	}
 	ported, err := os.ReadFile("testdata/ported.txt")
 	if err != nil {

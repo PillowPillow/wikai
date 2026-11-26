@@ -113,8 +113,8 @@ func TestLoadVault(t *testing.T) {
 	if p := b.Page("10-raw/a.md"); !p.Frozen || p.Folder != "" {
 		t.Errorf("raw: %+v", p)
 	}
-	if p := b.Page("10-raw/zotero/z.md"); !p.Frozen || p.Folder != "" {
-		t.Errorf("frozen except stays frozen at load: %+v", p)
+	if p := b.Page("10-raw/zotero/z.md"); p.Frozen || p.Folder != "" {
+		t.Errorf("frozen except follows no frozen rule at load: %+v", p)
 	}
 	if p := b.Page("50-missions/m.md"); p.Folder != "50-missions" || p.Type != "mission" {
 		t.Errorf("mission: %+v", p)

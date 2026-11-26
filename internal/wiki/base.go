@@ -61,16 +61,9 @@ const (
 
 func nfc(s string) string { return norm.NFC.String(s) }
 
-func under(p, dir string) bool {
-	return dir == "." || p == dir || strings.HasPrefix(p, dir+"/")
-}
-
-func underAny(p string, dirs []string) bool {
-	return slices.ContainsFunc(dirs, func(d string) bool { return under(p, d) })
-}
-
 type frozenPath struct {
 	dir     string
+	except  []string
 	checked bool
 }
 
@@ -105,7 +98,7 @@ func newLayout(cfg *config.Config) *layout {
 		}
 	}
 	for _, f := range cfg.Frozen {
-		l.frozen = append(l.frozen, frozenPath{rp(f.Path), f.Checked})
+		l.frozen = append(l.frozen, frozenPath{rp(f.Path), rps(f.Except), f.Checked})
 	}
 	for _, t := range cfg.Types {
 		for _, f := range t.Folders {
@@ -117,7 +110,7 @@ func newLayout(cfg *config.Config) *layout {
 
 func (l *layout) frozenAt(p string) *frozenPath {
 	for i, f := range l.frozen {
-		if under(p, f.dir) {
+		if config.Under(p, f.dir) && !config.UnderAny(p, f.except) {
 			return &l.frozen[i]
 		}
 	}
@@ -127,7 +120,7 @@ func (l *layout) frozenAt(p string) *frozenPath {
 func (l *layout) folderOf(p string) string {
 	best, bestLen := "", -1
 	for _, f := range l.folders {
-		if under(p, f.full) && len(f.full) > bestLen {
+		if config.Under(p, f.full) && len(f.full) > bestLen {
 			best, bestLen = f.rel, len(f.full)
 		}
 	}
@@ -147,7 +140,7 @@ func Load(boundary string, cfg *config.Config) (*Base, error) {
 			return err
 		}
 		p := nfc(filepath.ToSlash(rel))
-		if d.Name() == ".git" || underAny(p, l.ignore) {
+		if d.Name() == ".git" || config.UnderAny(p, l.ignore) {
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
@@ -172,7 +165,7 @@ func Load(boundary string, cfg *config.Config) (*Base, error) {
 }
 
 func (b *Base) add(l *layout, disk, p string) error {
-	if under(p, l.skeletons) || l.logDir != "" && under(p, l.logDir) {
+	if config.Under(p, l.skeletons) || l.logDir != "" && config.Under(p, l.logDir) {
 		return nil
 	}
 	data, err := os.ReadFile(disk)
@@ -201,7 +194,7 @@ func (b *Base) add(l *layout, disk, p string) error {
 	}
 	meta, raw, body, metaErr := ParseFrontmatter(text)
 	page := &Page{Path: p, Text: text, Body: body, RawMeta: raw, Meta: meta, MetaErr: metaErr,
-		Folder: folder, Frozen: frozen != nil, Unchecked: underAny(p, l.unchecked)}
+		Folder: folder, Frozen: frozen != nil, Unchecked: config.UnderAny(p, l.unchecked)}
 	page.Type, _ = meta["type"].(string)
 	if b.Cfg.Title == "filename" {
 		page.Title = strings.TrimSuffix(path.Base(p), ".md")

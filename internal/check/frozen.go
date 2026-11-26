@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 
+	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
 	"github.com/PillowPillow/wikai/internal/gitx"
 	"github.com/PillowPillow/wikai/internal/wiki"
@@ -22,65 +22,66 @@ func Frozen(b *wiki.Base, ref string) ([]wiki.Finding, error) {
 	if err := gitx.VerifyRef(b.Boundary, ref); err != nil {
 		return nil, exit.Usage("cannot read git ref %q", ref)
 	}
-	var findings []wiki.Finding
-	seen := map[string]bool{}
-	for _, f := range b.Cfg.Frozen {
-		var except []string
-		for _, e := range f.Except {
-			except = append(except, norm.NFC.String(b.Cfg.RootPath(e)))
-		}
-		files, err := gitx.LsTree(b.Boundary, ref, b.Cfg.RootPath(f.Path))
-		if err != nil {
-			return nil, err
-		}
-		for _, raw := range files {
-			p := norm.NFC.String(raw)
-			if seen[p] || slices.ContainsFunc(except, func(e string) bool { return p == e || strings.HasPrefix(p, e+"/") }) {
-				continue
-			}
-			seen[p] = true
-			old, err := gitx.Show(b.Boundary, ref, raw)
-			if err != nil {
-				return nil, err
-			}
-			cur, exists, err := readWorking(b.Boundary, raw)
-			if err != nil {
-				return nil, err
-			}
-			switch {
-			case !exists:
-				findings = append(findings, wiki.Finding{Check: "frozen", Path: p, Message: "frozen file deleted"})
-			case !bytes.Equal(old, cur):
-				findings = append(findings, wiki.Finding{Check: "frozen", Path: p, Message: "frozen file modified"})
-			}
-		}
+	files, err := gitx.LsTree(b.Boundary, ref)
+	if err != nil {
+		return nil, err
 	}
-	for _, a := range b.Cfg.AppendOnly {
-		raw := b.Cfg.RootPath(a)
-		files, err := gitx.LsTree(b.Boundary, ref, raw)
-		if err != nil {
-			return nil, err
-		}
-		if !slices.Contains(files, raw) {
-			continue
-		}
-		old, err := gitx.Show(b.Boundary, ref, raw)
-		if err != nil {
-			return nil, err
-		}
-		cur, exists, err := readWorking(b.Boundary, raw)
-		if err != nil {
-			return nil, err
-		}
+	var findings []wiki.Finding
+	for _, raw := range files {
 		p := norm.NFC.String(raw)
+		var finding string
 		switch {
-		case !exists:
-			findings = append(findings, wiki.Finding{Check: "frozen", Path: p, Message: "append-only file deleted"})
-		case !bytes.HasPrefix(cur, old):
-			findings = append(findings, wiki.Finding{Check: "frozen", Path: p, Message: "append-only file rewritten"})
+		case slices.ContainsFunc(b.Cfg.AppendOnly, func(a string) bool { return config.SamePath(p, b.Cfg.RootPath(a)) }):
+			finding, err = appendOnlyChange(b.Boundary, ref, raw)
+		case slices.ContainsFunc(b.Cfg.Frozen, func(f config.Frozen) bool { return frozenAt(b.Cfg, f, p) }):
+			finding, err = frozenChange(b.Boundary, ref, raw)
+		}
+		if err != nil {
+			return nil, err
+		}
+		if finding != "" {
+			findings = append(findings, wiki.Finding{Check: "frozen", Path: p, Message: finding})
 		}
 	}
 	return findings, nil
+}
+
+func frozenAt(cfg *config.Config, f config.Frozen, p string) bool {
+	return config.Under(p, cfg.RootPath(f.Path)) && !slices.ContainsFunc(f.Except, func(e string) bool { return config.Under(p, cfg.RootPath(e)) })
+}
+
+func frozenChange(dir, ref, raw string) (string, error) {
+	old, err := gitx.Show(dir, ref, raw)
+	if err != nil {
+		return "", err
+	}
+	cur, exists, err := readWorking(dir, raw)
+	switch {
+	case err != nil:
+		return "", err
+	case !exists:
+		return "frozen file deleted", nil
+	case !bytes.Equal(old, cur):
+		return "frozen file modified", nil
+	}
+	return "", nil
+}
+
+func appendOnlyChange(dir, ref, raw string) (string, error) {
+	old, err := gitx.Show(dir, ref, raw)
+	if err != nil {
+		return "", err
+	}
+	cur, exists, err := readWorking(dir, raw)
+	switch {
+	case err != nil:
+		return "", err
+	case !exists:
+		return "append-only file deleted", nil
+	case !bytes.HasPrefix(cur, old):
+		return "append-only file rewritten", nil
+	}
+	return "", nil
 }
 
 func readWorking(dir, rel string) ([]byte, bool, error) {

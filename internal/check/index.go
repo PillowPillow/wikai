@@ -3,9 +3,8 @@ package check
 import (
 	"fmt"
 	"path"
-	"slices"
-	"strings"
 
+	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/wiki"
 	"golang.org/x/text/unicode/norm"
 )
@@ -17,17 +16,11 @@ func scope(b *wiki.Base, folders []string) []*wiki.Page {
 	}
 	var out []*wiki.Page
 	for _, p := range b.Pages {
-		if folders == nil && p.Folder != "" || folders != nil && underAny(p.Path, dirs) {
+		if folders == nil && p.Folder != "" || folders != nil && config.UnderAny(p.Path, dirs) {
 			out = append(out, p)
 		}
 	}
 	return out
-}
-
-func underAny(p string, dirs []string) bool {
-	return slices.ContainsFunc(dirs, func(d string) bool {
-		return d == "." || p == d || strings.HasPrefix(p, d+"/")
-	})
 }
 
 func Index(b *wiki.Base) []wiki.Finding {

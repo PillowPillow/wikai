@@ -3,6 +3,7 @@ package check
 import (
 	"slices"
 
+	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/wiki"
 	"golang.org/x/text/unicode/norm"
 )
@@ -19,7 +20,7 @@ func Orphans(b *wiki.Base) []wiki.Finding {
 	skip := map[string]bool{b.IndexPath(): true, b.LogPath(): true}
 	inbound := map[string]bool{}
 	for _, p := range b.Pages {
-		if skip[p.Path] || underAny(p.Path, ignored) || slices.Contains(o.IgnoreLinksFromTypes, p.Type) {
+		if skip[p.Path] || config.UnderAny(p.Path, ignored) || slices.Contains(o.IgnoreLinksFromTypes, p.Type) {
 			continue
 		}
 		for _, link := range wiki.Links(b.Cfg.Links, p.Text) {

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
 	"github.com/PillowPillow/wikai/internal/gitx"
 	"github.com/PillowPillow/wikai/internal/wiki"
@@ -41,7 +42,7 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 		return MoveResult{}, exit.Refused("%s is frozen: it is never renamed", old)
 	}
 	root := nfc(b.Cfg.RootPath("."))
-	if !strings.HasSuffix(dest, ".md") || path.IsAbs(dest) || dest == ".." || strings.HasPrefix(dest, "../") || !inDir(dest, root) {
+	if !strings.HasSuffix(dest, ".md") || path.IsAbs(dest) || dest == ".." || strings.HasPrefix(dest, "../") || !config.Under(dest, root) {
 		return MoveResult{}, exit.Usage("%s must be a .md path inside %s", o.New, root)
 	}
 	stem := strings.TrimSuffix(path.Base(dest), ".md")
@@ -130,21 +131,21 @@ func reserved(b *wiki.Base, dest string) bool {
 	if dest == b.IndexPath() || dest == b.LogPath() {
 		return true
 	}
-	if cfg.Log != nil && cfg.Log.Mode == "dir" && inDir(dest, b.LogPath()) {
+	if cfg.Log != nil && cfg.Log.Mode == "dir" && config.Under(dest, b.LogPath()) {
 		return true
 	}
-	if cfg.Skeletons != "" && inDir(dest, nfc(cfg.RootPath(cfg.Skeletons))) {
+	if cfg.Skeletons != "" && config.Under(dest, nfc(cfg.RootPath(cfg.Skeletons))) {
 		return true
 	}
-	return slices.ContainsFunc(cfg.Ignore, func(i string) bool { return inDir(dest, nfc(cfg.RootPath(i))) })
+	return slices.ContainsFunc(cfg.Ignore, func(i string) bool { return config.Under(dest, nfc(cfg.RootPath(i))) })
 }
 
 func frozenDest(b *wiki.Base, dest string) bool {
 	for _, f := range b.Cfg.Frozen {
-		if !inDir(dest, nfc(b.Cfg.RootPath(f.Path))) {
+		if !config.Under(dest, nfc(b.Cfg.RootPath(f.Path))) {
 			continue
 		}
-		if !slices.ContainsFunc(f.Except, func(e string) bool { return inDir(dest, nfc(b.Cfg.RootPath(e))) }) {
+		if !slices.ContainsFunc(f.Except, func(e string) bool { return config.Under(dest, nfc(b.Cfg.RootPath(e))) }) {
 			return true
 		}
 	}
@@ -154,7 +155,7 @@ func frozenDest(b *wiki.Base, dest string) bool {
 // A type without folders may sit anywhere, except in the folder of another type.
 func typeAllows(b *wiki.Base, typeName, dest string) bool {
 	inFolders := func(folders []string) bool {
-		return slices.ContainsFunc(folders, func(f string) bool { return inDir(dest, nfc(b.Cfg.RootPath(f))) })
+		return slices.ContainsFunc(folders, func(f string) bool { return config.Under(dest, nfc(b.Cfg.RootPath(f))) })
 	}
 	if t, ok := b.Cfg.Types[typeName]; ok && len(t.Folders) > 0 {
 		return inFolders(t.Folders)

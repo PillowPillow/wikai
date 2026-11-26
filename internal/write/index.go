@@ -5,16 +5,13 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/PillowPillow/wikai/internal/config"
 	"github.com/PillowPillow/wikai/internal/exit"
 	"github.com/PillowPillow/wikai/internal/wiki"
 	"golang.org/x/text/unicode/norm"
 )
 
 func nfc(s string) string { return norm.NFC.String(s) }
-
-func inDir(p, dir string) bool {
-	return dir == "." || p == dir || strings.HasPrefix(p, dir+"/")
-}
 
 // Reports whether the index holds a line for the page: the index is on, the page is in index.include and a group applies.
 func Indexed(b *wiki.Base, pagePath string) bool {
@@ -29,7 +26,7 @@ func indexDir(b *wiki.Base, pagePath string) (string, bool) {
 		return "", false
 	}
 	pagePath = nfc(pagePath)
-	if !slices.ContainsFunc(idx.Include, func(f string) bool { return inDir(pagePath, nfc(b.Cfg.RootPath(f))) }) {
+	if !slices.ContainsFunc(idx.Include, func(f string) bool { return config.Under(pagePath, nfc(b.Cfg.RootPath(f))) }) {
 		return "", false
 	}
 	dir := path.Dir(pagePath)
@@ -66,7 +63,7 @@ func indexGroup(b *wiki.Base, pagePath string) (heading string, flat, ok bool) {
 		best := ""
 		for _, t := range b.Cfg.Types {
 			for _, f := range t.Folders {
-				if f = nfc(path.Clean(f)); inDir(dir, f) && len(f) > len(best) {
+				if f = nfc(path.Clean(f)); config.Under(dir, f) && len(f) > len(best) {
 					best = f
 				}
 			}
@@ -75,7 +72,7 @@ func indexGroup(b *wiki.Base, pagePath string) (heading string, flat, ok bool) {
 	case idx.Groups.Headings != nil:
 		best := ""
 		for key := range idx.Groups.Headings {
-			if k := nfc(path.Clean(key)); inDir(dir, k) && len(k) > len(best) {
+			if k := nfc(path.Clean(key)); config.Under(dir, k) && len(k) > len(best) {
 				best = key
 			}
 		}
