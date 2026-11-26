@@ -155,7 +155,7 @@ func TestNewPageCLIRefusesWikilinkBreakingName(t *testing.T) {
 	before := listFiles(t, dir)
 	index := readFile(t, filepath.Join(dir, "index.md"))
 	code, out, errOut := run(t, dir, "new", "page", "concept", "C# basics", "--summary", "x")
-	if code != 1 || out != "" || !strings.HasPrefix(errOut, "refused: ") {
+	if code != 2 || out != "" || !strings.HasPrefix(errOut, "error: ") {
 		t.Fatalf("code=%d out=%q err=%q", code, out, errOut)
 	}
 	if after := listFiles(t, dir); strings.Join(after, "\n") != strings.Join(before, "\n") {
