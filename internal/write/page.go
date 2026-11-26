@@ -104,13 +104,14 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 	}
 	values := map[string]string{"title": title, "slug": slug, "summary": summary}
 	for _, k := range slices.Sorted(mapKeys(o.Set)) {
+		if marker.Reserved(k) {
+			return "", exit.Usage("--set %s: a built-in value", k)
+		}
 		v, err := oneLine("--set "+k, o.Set[k])
 		if err != nil {
 			return "", err
 		}
-		if _, builtin := values[k]; !builtin {
-			values[k] = v
-		}
+		values[k] = v
 	}
 	text, err := marker.Fill(string(data), values, day, b.Cfg.Locale)
 	if err != nil {

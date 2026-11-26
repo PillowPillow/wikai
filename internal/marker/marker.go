@@ -141,6 +141,14 @@ func Format(format string, at time.Time, locale string) (string, error) {
 	return b.String(), nil
 }
 
+func Reserved(key string) bool {
+	switch key {
+	case "title", "date", "time", "slug", "summary":
+		return true
+	}
+	return strings.HasPrefix(key, "date:") || strings.HasPrefix(key, "time:")
+}
+
 func Fill(text string, values map[string]string, at time.Time, locale string) (string, error) {
 	var b strings.Builder
 	for {

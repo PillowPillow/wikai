@@ -146,6 +146,16 @@ func TestNewPageRefusesAnUnsupportedTokenAndWritesNothing(t *testing.T) {
 	}
 }
 
+func TestNewPageRefusesASetKeyThatNamesABuiltInValue(t *testing.T) {
+	for _, k := range []string{"title", "date", "time", "slug", "summary", "date:YYYY", "time:HH"} {
+		b, _ := homeBase(t)
+		_, err := NewPage(b, PageOpts{Kind: "term", Title: "Offer", Summary: "s", Date: jan2, Set: map[string]string{k: "x"}})
+		if exit.Code(err) != 2 || !strings.Contains(err.Error(), "--set "+k+": a built-in value") {
+			t.Errorf("--set %s: err = %v", k, err)
+		}
+	}
+}
+
 func TestNewPageSetDoesNotAddFrontmatterKey(t *testing.T) {
 	b, dir := homeBase(t)
 	p, err := NewPage(b, PageOpts{Kind: "term", Title: "Offer", Summary: "s", Date: jan2, Set: map[string]string{"color": "red"}})
