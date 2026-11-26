@@ -1,0 +1,34 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/gates.yml
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # a tag-ref checkout can downgrade the annotated tag to a lightweight one, which empties {{ .TagBody }}
+      - run: git fetch --force --tags
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      # pinned identically in gates.yml's goreleaser step; bump both together
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}

@@ -1,0 +1,54 @@
+version: 2
+
+project_name: wikai
+
+release:
+  github:
+    owner: PillowPillow
+    name: wikai
+  header: |
+    {{ .TagBody }}
+
+builds:
+  - main: ./cmd/wikai
+    binary: wikai
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/PillowPillow/wikai/internal/cli.Version={{ .Tag }}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  disable: true
+
+homebrew_casks:
+  - name: wikai
+    repository:
+      owner: PillowPillow
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/PillowPillow/wikai
+    description: "Check, write and guard LLM wikis from one config file"
+    url:
+      template: "https://github.com/PillowPillow/wikai/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ "{{staged_path}}" }}/wikai"]
+        end
+      end
+    commit_author:
+      name: goreleaser-bot
+      email: bot@goreleaser.com

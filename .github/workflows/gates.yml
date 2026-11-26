@@ -12,3 +12,35 @@ jobs:
       - run: test -z "$(gofmt -l .)"
       - run: go test -count=1 ./...
       - run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
+      - run: shellcheck install.sh
+      # pinned identically in release.yml's goreleaser step; bump both together
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: build --snapshot --single-target --clean
+      - name: the goreleaser-built binary agrees with the tag goreleaser resolved
+        run: |
+          bin="$(find dist -type f -name wikai || true)"
+          count="$(printf '%s\n' "$bin" | grep -c . || true)"
+          if [ "$count" != "1" ]; then
+            echo "expected exactly one wikai binary under dist/, found $count: $bin"
+            exit 1
+          fi
+          if ! got="$("$bin" --version)"; then
+            echo "the wikai binary goreleaser produced at '$bin' did not run"
+            exit 1
+          fi
+          if ! tag="$(jq -r .tag dist/metadata.json)"; then
+            echo "could not read dist/metadata.json"
+            exit 1
+          fi
+          if [ -z "$tag" ] || [ "$tag" = "null" ]; then
+            echo "dist/metadata.json carries no 'tag' field"
+            exit 1
+          fi
+          if [ "$got" != "$tag" ]; then
+            echo "goreleaser binary answered '$got', expected '$tag': the ldflags in .goreleaser.yaml must use {{ .Tag }}, not {{ .Version }}"
+            exit 1
+          fi
+          echo "goreleaser binary answered '$got'"
