@@ -73,3 +73,22 @@ func TestFormatNamesAndOrdinals(t *testing.T) {
 		}
 	}
 }
+
+func TestFormatRefusesMomentTokensOutsideTheSupportedList(t *testing.T) {
+	for format, tok := range map[string]string{
+		"YYYY-Q": "Q", "DDD": "DDD", "w": "w", "X": "X", "LL": "LL", "l": "l", "Z": "Z", "Mo": "Mo", "e": "e", "YYYYY": "YYYYY", "SSS": "SSS",
+	} {
+		_, err := Format(format, friday, "en")
+		u, ok := err.(*UnsupportedError)
+		if !ok || u.Token != tok {
+			t.Errorf("Format(%q) error = %v; want unsupported token %q", format, err, tok)
+		}
+	}
+}
+
+func TestFormatKeepsEscapedTokens(t *testing.T) {
+	got, err := Format(`[Q] \Q \L`, friday, "en")
+	if err != nil || got != "Q Q L" {
+		t.Fatalf("got %q, %v", got, err)
+	}
+}

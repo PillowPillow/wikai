@@ -133,6 +133,19 @@ func TestNewPageFillsObsidianDateAndTimeMarkers(t *testing.T) {
 	}
 }
 
+func TestNewPageRefusesAnUnsupportedTokenAndWritesNothing(t *testing.T) {
+	b, dir := homeBase(t)
+	testrepo.Write(t, dir, map[string]string{"knowledge/_skeletons/term.md": "---\ntype: term\ncreated:\nupdated:\nsources: []\naliases: []\n---\n\n# {{title}} {{date:YYYY-Q}}\n"})
+	before := read(t, dir, "knowledge/index.md")
+	_, err := NewPage(b, PageOpts{Kind: "term", Title: "Quarter", Summary: "s", Date: jan2})
+	if exit.Code(err) != 2 || !strings.Contains(err.Error(), `skeleton term: unsupported token "Q" in {{date:YYYY-Q}}`) {
+		t.Fatalf("err = %v", err)
+	}
+	if exists(dir, "knowledge/glossary/quarter.md") || read(t, dir, "knowledge/index.md") != before {
+		t.Fatal("a page or an index line was written")
+	}
+}
+
 func TestNewPageSetDoesNotAddFrontmatterKey(t *testing.T) {
 	b, dir := homeBase(t)
 	p, err := NewPage(b, PageOpts{Kind: "term", Title: "Offer", Summary: "s", Date: jan2, Set: map[string]string{"color": "red"}})
