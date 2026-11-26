@@ -3,7 +3,7 @@ version: 2
 project_name: wikai
 
 release:
-  # explicit forge: goreleaser would otherwise infer it from the git remote
+  # explicit forge: goreleaser would otherwise extract it from the origin remote URL
   github:
     owner: PillowPillow
     name: wikai
