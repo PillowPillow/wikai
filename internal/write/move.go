@@ -44,7 +44,9 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 		return MoveResult{}, exit.Refused("%s is frozen: it is never renamed", old)
 	}
 	root := nfc(b.Cfg.RootPath("."))
-	if !strings.HasSuffix(dest, ".md") || path.IsAbs(dest) || dest == ".." || strings.HasPrefix(dest, "../") || !config.Under(dest, root) {
+	// Exact, not case-folded: later steps cut root from dest byte by byte.
+	inRoot := root == "." || strings.HasPrefix(dest, root+"/")
+	if !strings.HasSuffix(dest, ".md") || path.IsAbs(dest) || dest == ".." || strings.HasPrefix(dest, "../") || !inRoot {
 		return MoveResult{}, exit.Usage("%s must be a .md path inside %s", o.New, root)
 	}
 	stem := strings.TrimSuffix(path.Base(dest), ".md")

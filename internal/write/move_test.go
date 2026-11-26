@@ -165,6 +165,7 @@ func TestMoveRefused(t *testing.T) {
 		{"index", "knowledge/index.md", "knowledge/glossary/index.md", 2, nil},
 		{"leaves the base", "knowledge/glossary/billing.md", "../x.md", 2, nil},
 		{"leaves the root", "knowledge/glossary/billing.md", "x.md", 2, nil},
+		{"root in another case", "knowledge/glossary/billing.md", "Knowledge/glossary/fee.md", 2, nil},
 		{"not markdown", "knowledge/glossary/billing.md", "knowledge/glossary/billing.txt", 2, nil},
 		{"missing page", "knowledge/glossary/nope.md", "knowledge/glossary/x.md", 2, nil},
 		{"frozen page", "knowledge/archive/2026-01-01-example-design.md", "knowledge/archive/x.md", 2, nil},
