@@ -1,0 +1,12 @@
+[
+  {
+    "check": "templates",
+    "path": "_meta/skeletons/sub/bad.md",
+    "message": "unsupported token \"Q\" in {{date:YYYY-[Q]Q}}"
+  },
+  {
+    "check": "templates",
+    "path": "_meta/skeletons/sub/bad.md",
+    "message": "unsupported token \"LT\" in {{time:LT}}"
+  }
+]

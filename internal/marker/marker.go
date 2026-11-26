@@ -150,6 +150,23 @@ func Reserved(key string) bool {
 }
 
 func Fill(text string, values map[string]string, at time.Time, locale string) (string, error) {
+	return scan(text, func(name string) (string, bool, error) {
+		return value(name, values, at, locale)
+	})
+}
+
+func Check(text string) []error {
+	var errs []error
+	_, _ = scan(text, func(name string) (string, bool, error) {
+		if _, _, err := value(name, nil, time.Time{}, "en"); err != nil {
+			errs = append(errs, err)
+		}
+		return "", false, nil
+	})
+	return errs
+}
+
+func scan(text string, fill func(name string) (string, bool, error)) (string, error) {
 	var b strings.Builder
 	for {
 		i := strings.Index(text, "{{")
@@ -165,7 +182,7 @@ func Fill(text string, values map[string]string, at time.Time, locale string) (s
 			continue
 		}
 		text = text[i+len(name)+4:]
-		v, known, err := value(name, values, at, locale)
+		v, known, err := fill(name)
 		if err != nil {
 			return "", err
 		}
