@@ -45,7 +45,18 @@ func TestInitDefaultsToCurrentFolderAndCreatesDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, out, _ := run(t, dir, "init", "sub/base", "--preset", "obsidian-vault")
-	if code != 0 || !strings.Contains(out, "created wikai.yaml\n") && !strings.Contains(out, "sub/base") {
+	want := "created wikai.yaml\n" +
+		"created _meta/skeletons/concept.md\n" +
+		"created _meta/skeletons/entity.md\n" +
+		"created _meta/skeletons/note.md\n" +
+		"created _meta/skeletons/source.md\n" +
+		"created _meta/skeletons/summary.md\n" +
+		"created index.md\n" +
+		"created log.md\n" +
+		"created notes/.gitkeep\n" +
+		"created raw/.gitkeep\n" +
+		"created wiki/.gitkeep\n"
+	if code != 0 || out != want {
 		t.Fatalf("%d %q", code, out)
 	}
 }
