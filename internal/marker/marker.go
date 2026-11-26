@@ -143,6 +143,7 @@ func Format(format string, at time.Time, locale string) (string, error) {
 }
 
 func Reserved(key string) bool {
+	key = strings.ToLower(key)
 	switch key {
 	case "title", "date", "time", "slug", "summary":
 		return true
@@ -198,14 +199,22 @@ func value(name string, values map[string]string, at time.Time, locale string) (
 	if v, ok := values[name]; ok {
 		return v, true, nil
 	}
-	switch name {
-	case "date", "date:":
-		name = "date:YYYY-MM-DD"
-	case "time", "time:":
-		name = "time:HH:mm"
+	if Reserved(name) {
+		if v, ok := values[strings.ToLower(name)]; ok {
+			return v, true, nil
+		}
 	}
 	kind, format, _ := strings.Cut(name, ":")
-	if kind != "date" && kind != "time" || !strings.Contains(name, ":") {
+	switch strings.ToLower(kind) {
+	case "date":
+		if format == "" {
+			format = "YYYY-MM-DD"
+		}
+	case "time":
+		if format == "" {
+			format = "HH:mm"
+		}
+	default:
 		return "", false, nil
 	}
 	s, err := Format(format, at, locale)

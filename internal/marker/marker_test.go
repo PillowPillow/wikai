@@ -94,6 +94,20 @@ func TestFillGivesTheDefaultFormatToAnEmptyFormat(t *testing.T) {
 	}
 }
 
+func TestFillIgnoresCaseInBuiltInNamesOnly(t *testing.T) {
+	values := map[string]string{"title": "T", "slug": "s", "summary": "u", "x": "1"}
+	got, err := Fill("{{Date}} {{TIME:HH}} {{DATE:MM}} {{Time:}} {{Title}} {{SLUG}} {{Summary}} {{x}} {{X}}", values, friday, "en")
+	if err != nil || got != "2026-01-02 14 01 14:05 T s u 1 {{X}}" {
+		t.Fatalf("got %q, %v", got, err)
+	}
+}
+
+func TestCheckReportsAnUnsupportedTokenInAnUpperCaseMarker(t *testing.T) {
+	if errs := Check("{{DATE:Q}}"); len(errs) != 1 {
+		t.Fatalf("errs = %v", errs)
+	}
+}
+
 func TestFormatKeepsEscapedTokens(t *testing.T) {
 	got, err := Format(`[Q] \Q \L`, friday, "en")
 	if err != nil || got != "Q Q L" {

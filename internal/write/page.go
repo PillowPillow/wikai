@@ -110,6 +110,9 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 		if marker.Reserved(k) {
 			return "", exit.Usage("--set %s: a built-in value", k)
 		}
+		if strings.ContainsAny(k, "{}\r\n") {
+			return "", exit.Usage("--set %q: a marker name holds no {, } or line break", k)
+		}
 		v, err := oneLine("--set "+k, o.Set[k])
 		if err != nil {
 			return "", err
