@@ -6,9 +6,9 @@ Date: 2026-11-25. Status: approved by checklist on 2026-11-25 (`2026-11-25-wikai
 
 Three knowledge bases follow the LLM wiki pattern (immutable sources, agent-written pages, an index, a log, the ingest / query / lint procedures):
 
-- **Brain**, an Obsidian vault (`~/Brain`);
-- the `knowledge/` folder of **am-home** (`~/Development/Pillow/am-home`);
-- the `knowledge/` folder of **dev-home** (`~/Development/Digitaleo/dev-home`).
+- **Brain**, an Obsidian vault;
+- the `knowledge/` folder of **am-home**;
+- the `knowledge/` folder of **dev-home**.
 
 Their deterministic tooling is custom and duplicated: Brain has 402 lines of Python and sh without tests; each home has about 1,000 lines of Python plus tests, and the two copies already differ. `wikai` is one Go binary that replaces these scripts for any LLM wiki. A new wiki is set up with a config file and no code.
 
@@ -67,7 +67,7 @@ Everything below that is not in this list is the author's call and is open to co
 
 ## Constraints
 
-- Go, cobra, `gopkg.in/yaml.v3`, goreleaser, a Homebrew cask in `PillowPillow/tap`: the recipe of `den` (`~/Development/Pillow/den`, see its `.goreleaser.yaml` and `install.sh`).
+- Go, cobra, `gopkg.in/yaml.v3`, goreleaser, a Homebrew cask in `PillowPillow/tap`: the recipe of `den` (see its `.goreleaser.yaml` and `install.sh`).
 - Zero known vulnerability. Go and every dependency are at their latest stable version, checked at the source when the plan is written and not from memory. `govulncheck ./...` runs in CI on every push and before a release; one finding fails the build. The dependency list stays as short as the code allows.
 - Module `github.com/PillowPillow/wikai`, repository `git@github.com:PillowPillow/wikai.git`.
 - git is the only external program. Without a git repository, the frozen-path check is skipped with a warning on stderr.

@@ -10,12 +10,12 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-25-wikai-core-design.md`. The checklist `docs/superpowers/specs/2026-11-25-wikai-core-validation.md` wins over the spec. The checklist of this plan, `docs/superpowers/plans/2026-11-25-wikai-core-validation.md` (approved 2026-11-25), wins over this plan and over the spec where they differ. Executors read all three.
 
-**Reference sources to port (read-only, never copy a real name out of them):**
+**Reference sources to port (read-only, never copy a real name out of them).** `<am-home>`, `<dev-home>`, `<brain>` and `<den>` stand for the local clone of each repository:
 
-- `~/Development/Pillow/am-home/knowledge/_ops/check.py`, `new.py`, `tests/`, `fixtures/` (29 fixtures)
-- `~/Development/Digitaleo/dev-home/knowledge/_ops/` — diffed against am-home on 2026-11-25: `check.py` differs only by the absent code citations, `origin/master` tried before `origin/main`, and the `link leaves …` wording; `new.py` differs only by the French texts. Its 26 fixtures are the am-home ones without the three `code-citation-*`. Port from am-home only.
-- `~/Brain/_meta/scripts/health_check.py`, `manifest.py`, `protect_raw.py`, `guard.sh`
-- `~/Development/Pillow/den/.goreleaser.yaml`, `.github/workflows/`
+- `<am-home>/knowledge/_ops/check.py`, `new.py`, `tests/`, `fixtures/` (29 fixtures)
+- `<dev-home>/knowledge/_ops/` — diffed against am-home on 2026-11-25: `check.py` differs only by the absent code citations, `origin/master` tried before `origin/main`, and the `link leaves …` wording; `new.py` differs only by the French texts. Its 26 fixtures are the am-home ones without the three `code-citation-*`. Port from am-home only.
+- `<brain>/_meta/scripts/health_check.py`, `manifest.py`, `protect_raw.py`, `guard.sh`
+- `<den>/.goreleaser.yaml`, `.github/workflows/`
 
 ## Global Constraints
 
@@ -1154,7 +1154,7 @@ Prerequisites for the human (the release cannot run without them):
 
 `LICENSE` is the GPL-3.0 text (the licence of `github.com/PillowPillow/tea-shot`, approved by the human). Take the text from https://www.gnu.org/licenses/gpl-3.0.txt, unchanged.
 
-- [ ] **Step 1: Write `.goreleaser.yaml`** from `~/Development/Pillow/den/.goreleaser.yaml`, with these values:
+- [ ] **Step 1: Write `.goreleaser.yaml`** from `<den>/.goreleaser.yaml`, with these values:
 
   - `project_name: wikai`; `release.github`: owner `PillowPillow`, name `wikai`; `header: "{{ .TagBody }}"`.
   - `builds`: `main: ./cmd/wikai`, `binary: wikai`, `CGO_ENABLED=0`, `goos: [darwin, linux]`, `goarch: [amd64, arm64]`, `ldflags: -s -w -X github.com/PillowPillow/wikai/internal/cli.Version={{ .Tag }}`.
@@ -1165,7 +1165,7 @@ Prerequisites for the human (the release cannot run without them):
 
 - [ ] **Step 3: Write `release.yml`** as in `den`: `on: push: tags: ["v*"]`, `permissions: contents: write`, job `test` uses `gates.yml`, job `release` needs `test`: checkout with `fetch-depth: 0`, `git fetch --force --tags`, setup-go from `go.mod`, goreleaser-action `release --clean` with `GITHUB_TOKEN` and `TAP_GITHUB_TOKEN`.
 
-- [ ] **Step 4: Write `install.sh`** from `~/Development/Pillow/den/install.sh`: `den` → `wikai`, `DEN_INSTALL_DIR` → `WIKAI_INSTALL_DIR`, `DEN_VERSION` → `WIKAI_VERSION`; the version probe is `wikai --version`, which prints the tag alone. Add `shellcheck install.sh` as a step of `gates.yml`.
+- [ ] **Step 4: Write `install.sh`** from `<den>/install.sh`: `den` → `wikai`, `DEN_INSTALL_DIR` → `WIKAI_INSTALL_DIR`, `DEN_VERSION` → `WIKAI_VERSION`; the version probe is `wikai --version`, which prints the tag alone. Add `shellcheck install.sh` as a step of `gates.yml`.
 
 - [ ] **Step 5: Write `README.md`**: what `wikai` is (two sentences), `brew install --cask PillowPillow/tap/wikai`, the `install.sh` one-liner, one line per command, the `wikai.yaml` home example with a link to the spec for each block, the hook snippet for `.claude/settings.json` (`"command": "wikai guard hook"`, matcher `Edit|Write|NotebookEdit`), and the pre-commit line `exec wikai guard commit --staged`.
 
@@ -1196,9 +1196,9 @@ This task runs on the author's machine only; CI does not run it. It never writes
 - [ ] **Step 1: Record the current reference.** Run the three current scripts and keep their last line:
 
 ```bash
-python3 ~/Development/Pillow/am-home/knowledge/_ops/check.py check
-python3 ~/Development/Digitaleo/dev-home/knowledge/_ops/check.py check
-(cd ~/Brain && python3 _meta/scripts/health_check.py)
+python3 <am-home>/knowledge/_ops/check.py check
+python3 <dev-home>/knowledge/_ops/check.py check
+(cd <brain> && python3 _meta/scripts/health_check.py)
 ```
 
 Expected: `OK: <n> pages` twice, and `Total : 0 problème(s)` with `Notes contrôlées : <n>`. (On 2026-11-25: 148, 15, 129.)
@@ -1207,7 +1207,7 @@ Expected: `OK: <n> pages` twice, and `Total : 0 problème(s)` with `Notes contr�
 
   - `am-home.yaml`: `internal/check/testdata/home.yaml`.
   - `dev-home.yaml`: the same with `locale: fr`, `base_branch: master`, `citations.code: false`.
-  - `brain.yaml`: `internal/config/testdata/brain.yaml`, completed from the tables of `~/Brain/_meta/scripts/health_check.py`: the `COMMON` keys go to the top-level `frontmatter`; each entry of `SCHEMA` becomes a type with its required keys and its `status` values; `KINDS` are the `kind` values; `NOT_CHECKED` and `RULE_FILES` give `ignore`; `WIKI_DIRS` gives `orphans.scope`; `RAW_EXEMPT` gives the `except` list. The Python script checks no date format: set `format: date` on a key only when the run stays clean.
+  - `brain.yaml`: `internal/config/testdata/brain.yaml`, completed from the tables of `<brain>/_meta/scripts/health_check.py`: the `COMMON` keys go to the top-level `frontmatter`; each entry of `SCHEMA` becomes a type with its required keys and its `status` values; `KINDS` are the `kind` values; `NOT_CHECKED` and `RULE_FILES` give `ignore`; `WIKI_DIRS` gives `orphans.scope`; `RAW_EXEMPT` gives the `except` list. The Python script checks no date format: set `format: date` on a key only when the run stays clean.
 
 - [ ] **Step 3: Write `acceptance/run.sh`**: builds `./wikai`, then for each base runs `./wikai check --config "$WIKAI_ACCEPTANCE_CONFIGS/<name>.yaml" --dir <base path>`; base paths come from `WIKAI_BRAIN`, `WIKAI_AM_HOME`, `WIKAI_DEV_HOME`, which are required and have no default; the script exits non-zero when a run does, and when a config file is absent.
 
