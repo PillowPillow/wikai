@@ -1,0 +1,61 @@
+version: 1
+root: knowledge
+locale: en
+title: heading
+links: markdown
+ignore: [README.md]
+
+frontmatter:
+  type:    { required: true }
+  created: { required: true, format: date }
+  updated: { required: true, format: date }
+  sources: { required: true, format: list }
+
+types:
+  term:
+    folders: [glossary]
+    frontmatter:
+      aliases: { required: true, format: list }
+  repo:
+    folders: [repos]
+    frontmatter:
+      origin:  { required: true }
+      aliases: { required: true, format: list }
+  domain:
+    folders: [domains]
+  decision:
+    folders: [decisions]
+    frontmatter:
+      supersedes:    { required: true }
+      superseded-by: { required: true }
+    kinds:
+      decision: { name: "adr-{date:compact}-{slug}" }
+      fact:     { name: "fact-{date:compact}-{slug}" }
+  design:
+    folders: [designs]
+    kinds:
+      design: { name: "{date}-{slug}" }
+
+skeletons: _skeletons
+
+index:
+  file: index.md
+  groups: folder
+  sort: path
+
+log:
+  mode: dir
+  path: log
+  operations: [init, ingest, knowledge, move, lint]
+
+frozen:
+  - path: archive
+    checked: false
+  - path: log
+base_branch: main
+
+citations:
+  frontmatter: sources
+  code: true
+
+orphans: {}
