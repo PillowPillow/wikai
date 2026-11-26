@@ -59,6 +59,9 @@ I only check that my transcription matches what you said.
   - **Réponse : Faithful**
 - **A11b.** The human tags v0.2.0, and only then does the move of the am-home repository to wikai start. *(session brief)*
   - **Réponse : Faithful**
+- **A12.** {{title}} stays the title passed to wikai new page, not the file name as in Obsidian; the spec states the difference. *(decision of 26 Nov on the title marker)*
+  - Conséquence : A kind whose file name is Résumé - {title} gets the heading # Talk, where Obsidian would write # Résumé - Talk.
+  - **Réponse : Faithful**
 
 ## B — My defaults
 
@@ -120,6 +123,12 @@ The real points to decide. Each line gives the retained choice, then the alterna
 
 - **B12.** The README gains one line that names the supported markers and points to the spec; no CHANGELOG file is added. *(plan, gates)* — _Never discussed_
   - Sinon : The README lists the full token table.
+  - **Réponse : Retained choice**
+
+### Errors and checks
+
+- **B13.** wikai check validates the date and time formats in skeletons even when the base lists no template_markers. *(spec, template_markers)* — _Never discussed_
+  - Sinon : wikai check validates skeleton formats only when template_markers is set.
   - **Réponse : Retained choice**
 
 ## C — What you do not have to validate

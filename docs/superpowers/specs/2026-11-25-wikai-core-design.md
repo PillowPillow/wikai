@@ -268,7 +268,7 @@ or `OK: 148 pages`. `--json` prints the array `[{"check", "path", "message"}]`, 
 
 Skeleton markers follow the Obsidian core Templates syntax. A marker is `{{name}}`; the name ends at the first `}}` and holds no `{`, `}` or line break. The skeleton is read once, from start to end: a filled value is never read again, so a `--summary` or `--set` value that holds `{{date}}` stays as written.
 
-- `{{title}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set key=value`.
+- `{{title}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set key=value`. `{{title}}` is the title passed to `new page`, not the file name as in Obsidian: a kind named `Résumé - {title}` gets the heading `# Talk`, not `# Résumé - Talk`.
 - `{{date}}` is `{{date:YYYY-MM-DD}}`; `{{time}}` is `{{time:HH:mm}}`. These defaults are fixed.
 - `{{date:FMT}}` and `{{time:FMT}}` are the same: they format the page's day with the Moment.js format `FMT`. The time is now, in local time, or 00:00 of the `--date` day.
 - A `--set` key equal to `title`, `date`, `time`, `slug` or `summary`, or starting with `date:` or `time:`, is a usage error (exit 2).
