@@ -83,7 +83,7 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 	changes := map[string]string{}
 	var modified []string
 	for _, p := range b.Pages {
-		if p.Path == b.IndexPath() || p.Frozen {
+		if p.Path == b.IndexPath() || p.Path == b.LogPath() || p.Frozen {
 			continue
 		}
 		text := wiki.RewriteLinks(style, p.Text, rewrite(p.Path))

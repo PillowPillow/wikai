@@ -296,3 +296,42 @@ func TestMoveVaultRefusesWikilinkCharacters(t *testing.T) {
 		}
 	}
 }
+
+func TestMoveVaultSkipsLogWithFrontmatter(t *testing.T) {
+	const log = "---\ntype: log\n---\n# Log\n\n## [2026-01-01] ingest | x\n- créé : [[Evals]]\n"
+	b, dir := vaultRepo(t, map[string]string{"log.md": log})
+	res, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: "20-wiki/concepts/LLM evals.md", Date: jan3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(res.Modified, ",") != "20-wiki/concepts/Harness.md" {
+		t.Fatalf("modified = %q", res.Modified)
+	}
+	want := log + "\n## [2026-01-03] move | Page 20-wiki/concepts/Evals.md renommée 20-wiki/concepts/LLM evals.md\n- créé : [[LLM evals]]\n- modifié : [[Harness]]\n- note : renommé depuis 20-wiki/concepts/Evals.md\n"
+	if got := read(t, dir, "log.md"); got != want {
+		t.Fatalf("log = %q", got)
+	}
+}
+
+func TestMoveVaultFlatIndexStemCollision(t *testing.T) {
+	cfg, err := os.ReadFile(filepath.Join("..", "config", "testdata", "brain.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	flat := strings.Replace(string(cfg), "  groups:\n    20-wiki/concepts: \"Concepts et comparaisons (`20-wiki/concepts/`)\"\n    20-wiki/resumes:  \"Résumés de sources (`20-wiki/resumes/`)\"\n", "", 1)
+	if flat == string(cfg) {
+		t.Fatal("groups block not found")
+	}
+	b, dir := vaultRepo(t, map[string]string{
+		"wikai.yaml":                   flat,
+		"index.md":                     "# Index\n\n- [[Alpha]] — a\n- [[Evals]] — e\n- [[Harness]] — h\n- [[LLM evals]] — other\n",
+		"20-wiki/resumes/LLM evals.md": "---\ntype: wiki\n---\n",
+	})
+	if _, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: "20-wiki/concepts/LLM evals.md", NoLog: true}); err != nil {
+		t.Fatal(err)
+	}
+	want := "# Index\n\n- [[20-wiki/concepts/LLM evals]] — e\n- [[Alpha]] — a\n- [[Harness]] — h\n- [[LLM evals]] — other\n"
+	if got := read(t, dir, "index.md"); got != want {
+		t.Fatalf("index = %q", got)
+	}
+}
