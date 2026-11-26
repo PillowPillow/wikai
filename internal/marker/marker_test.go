@@ -87,6 +87,13 @@ func TestFormatRefusesMomentTokensOutsideTheSupportedList(t *testing.T) {
 	}
 }
 
+func TestFillGivesTheDefaultFormatToAnEmptyFormat(t *testing.T) {
+	got, err := Fill("{{date:}} {{time:}}", nil, friday, "en")
+	if err != nil || got != "2026-01-02 14:05" {
+		t.Fatalf("got %q, %v", got, err)
+	}
+}
+
 func TestFormatKeepsEscapedTokens(t *testing.T) {
 	got, err := Format(`[Q] \Q \L`, friday, "en")
 	if err != nil || got != "Q Q L" {

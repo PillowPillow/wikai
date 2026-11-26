@@ -199,9 +199,9 @@ func value(name string, values map[string]string, at time.Time, locale string) (
 		return v, true, nil
 	}
 	switch name {
-	case "date":
+	case "date", "date:":
 		name = "date:YYYY-MM-DD"
-	case "time":
+	case "time", "time:":
 		name = "time:HH:mm"
 	}
 	kind, format, _ := strings.Cut(name, ":")
