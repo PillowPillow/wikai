@@ -53,7 +53,7 @@ frontmatter:                   # rules for every page
 types:
   term:
     folders: [glossary]
-    frontmatter:
+    frontmatter:               # adds keys; a key named above gets this rule instead
       aliases: { required: true, format: list }
   repo:
     folders: [repos]
