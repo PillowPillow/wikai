@@ -17,6 +17,9 @@ var Version = "dev"
 // Exit 1 whose findings are already printed, so Execute adds no "refused:" line.
 var errFindings = exit.Refused("findings")
 
+// Exit 2 whose denial is already printed: Claude Code shows the hook's stderr to the agent as is.
+var errDenied = exit.Usage("denied")
+
 type Env struct {
 	Dir            string
 	Stdin          io.Reader
@@ -45,6 +48,7 @@ func newRoot(env Env) *cobra.Command {
 	root.AddCommand(newNew(env))
 	root.AddCommand(newMove(env))
 	root.AddCommand(newManifest(env))
+	root.AddCommand(newGuard(env))
 	return root
 }
 
@@ -61,7 +65,7 @@ func Execute(args []string, env Env) int {
 	root.SetArgs(args)
 	err := root.Execute()
 	code := exit.Code(err)
-	if err != nil && !errors.Is(err, errFindings) {
+	if err != nil && !errors.Is(err, errFindings) && !errors.Is(err, errDenied) {
 		prefix := "error"
 		if code == 1 {
 			prefix = "refused"
