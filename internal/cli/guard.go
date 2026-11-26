@@ -44,17 +44,16 @@ func newGuardHook(env Env) *cobra.Command {
 			if ev.Cwd == "" {
 				ev.Cwd = start
 			}
-			file, err := config.Find(start)
-			if err != nil {
-				return nil
-			}
-			cfg, err := config.Load(file)
-			if err != nil {
-				return err
-			}
-			if deny := guard.Hook(cfg, filepath.Dir(file), ev); deny != "" {
-				fmt.Fprintln(env.Stderr, deny)
-				return errDenied
+			project, _ := config.Find(start)
+			for _, file := range guard.Bases(ev, project) {
+				cfg, err := config.Load(file)
+				if err != nil {
+					return err
+				}
+				if deny := guard.Hook(cfg, filepath.Dir(file), ev); deny != "" {
+					fmt.Fprintln(env.Stderr, deny)
+					return errDenied
+				}
 			}
 			return nil
 		},

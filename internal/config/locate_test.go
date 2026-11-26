@@ -35,6 +35,24 @@ func TestFind(t *testing.T) {
 	}
 }
 
+func TestFindAllListsEveryConfigInnermostFirst(t *testing.T) {
+	root, deep := setupTree(t)
+	inner := filepath.Join(root, "a", "b", "wikai.yaml")
+	if err := os.WriteFile(inner, []byte("version: 1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(deep, "wikai.yaml"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got := FindAll(deep)
+	if len(got) != 2 || got[0] != inner || got[1] != filepath.Join(root, "a", "wikai.yaml") {
+		t.Fatalf("got %v", got)
+	}
+	if got := FindAll(t.TempDir()); len(got) != 0 {
+		t.Fatalf("got %v", got)
+	}
+}
+
 func TestLocate(t *testing.T) {
 	root, deep := setupTree(t)
 	file := filepath.Join(root, "a", "wikai.yaml")
