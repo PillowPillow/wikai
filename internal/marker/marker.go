@@ -28,7 +28,68 @@ var layouts = map[string]string{
 	"HH": "15", "h": "3", "hh": "03", "m": "4", "mm": "04", "s": "5", "ss": "05", "A": "PM", "a": "pm",
 }
 
+type names struct {
+	months, monthsShort, weekdays, weekdaysShort, weekdaysMin []string
+	ordinal                                                   func(day int) string
+}
+
+// The fr strings are moment's src/locale/fr.js.
+var locales = map[string]names{
+	"en": {
+		strings.Split("January_February_March_April_May_June_July_August_September_October_November_December", "_"),
+		strings.Split("Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec", "_"),
+		strings.Split("Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday", "_"),
+		strings.Split("Sun_Mon_Tue_Wed_Thu_Fri_Sat", "_"),
+		strings.Split("Su_Mo_Tu_We_Th_Fr_Sa", "_"),
+		func(d int) string {
+			suffix := "th"
+			if d/10 != 1 {
+				switch d % 10 {
+				case 1:
+					suffix = "st"
+				case 2:
+					suffix = "nd"
+				case 3:
+					suffix = "rd"
+				}
+			}
+			return strconv.Itoa(d) + suffix
+		},
+	},
+	"fr": {
+		strings.Split("janvier_février_mars_avril_mai_juin_juillet_août_septembre_octobre_novembre_décembre", "_"),
+		strings.Split("janv._févr._mars_avr._mai_juin_juil._août_sept._oct._nov._déc.", "_"),
+		strings.Split("dimanche_lundi_mardi_mercredi_jeudi_vendredi_samedi", "_"),
+		strings.Split("dim._lun._mar._mer._jeu._ven._sam.", "_"),
+		strings.Split("di_lu_ma_me_je_ve_sa", "_"),
+		func(d int) string {
+			if d == 1 {
+				return "1er"
+			}
+			return strconv.Itoa(d)
+		},
+	},
+}
+
 func token(tok string, at time.Time, locale string) (string, bool) {
+	n, ok := locales[locale]
+	if !ok {
+		n = locales["en"]
+	}
+	switch tok {
+	case "MMMM":
+		return n.months[at.Month()-1], true
+	case "MMM":
+		return n.monthsShort[at.Month()-1], true
+	case "dddd":
+		return n.weekdays[at.Weekday()], true
+	case "ddd":
+		return n.weekdaysShort[at.Weekday()], true
+	case "dd":
+		return n.weekdaysMin[at.Weekday()], true
+	case "Do":
+		return n.ordinal(at.Day()), true
+	}
 	if l, ok := layouts[tok]; ok {
 		return at.Format(l), true
 	}

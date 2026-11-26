@@ -33,3 +33,43 @@ func TestFormatNumericTokensAndLiterals(t *testing.T) {
 		}
 	}
 }
+
+func day(month time.Month, d int) time.Time {
+	return time.Date(2026, month, d, 9, 0, 0, 0, time.UTC)
+}
+
+func TestFormatNamesAndOrdinals(t *testing.T) {
+	for _, c := range []struct {
+		locale, format string
+		at             time.Time
+		want           string
+	}{
+		{"en", "dddd ddd dd, MMMM MMM Do", friday, "Friday Fri Fr, January Jan 2nd"},
+		{"en", "Do Do Do Do Do Do Do Do", day(1, 1), "1st 1st 1st 1st 1st 1st 1st 1st"},
+		{"en", "Do", day(1, 3), "3rd"},
+		{"en", "Do", day(1, 4), "4th"},
+		{"en", "Do", day(1, 11), "11th"},
+		{"en", "Do", day(1, 12), "12th"},
+		{"en", "Do", day(1, 13), "13th"},
+		{"en", "Do", day(1, 21), "21st"},
+		{"en", "Do", day(1, 22), "22nd"},
+		{"en", "Do", day(1, 23), "23rd"},
+		{"en", "dd", day(1, 4), "Su"},
+		{"fr", "dddd ddd dd D MMMM MMM", friday, "vendredi ven. ve 2 janvier janv."},
+		{"fr", "Do Do", day(1, 1), "1er 1er"},
+		{"fr", "Do", day(1, 2), "2"},
+		{"fr", "dddd ddd dd", day(1, 4), "dimanche dim. di"},
+		{"fr", "MMMM MMM", day(2, 1), "février févr."},
+		{"fr", "MMMM MMM", day(6, 1), "juin juin"},
+		{"fr", "MMMM MMM", day(7, 1), "juillet juil."},
+		{"fr", "MMMM MMM", day(8, 1), "août août"},
+		{"fr", "MMMM MMM", day(9, 1), "septembre sept."},
+		{"fr", "MMMM MMM", day(12, 1), "décembre déc."},
+		{"fr", "dddd D MMMM YYYY [à] HH:mm A", friday, "vendredi 2 janvier 2026 à 14:05 PM"},
+	} {
+		got, err := Format(c.format, c.at, c.locale)
+		if err != nil || got != c.want {
+			t.Errorf("Format(%s, %q) = %q, %v; want %q", c.locale, c.format, got, err, c.want)
+		}
+	}
+}
