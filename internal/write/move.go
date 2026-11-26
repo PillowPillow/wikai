@@ -57,7 +57,7 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 	if reserved(b, dest) {
 		return MoveResult{}, exit.Refused("%s is the index, the log, a skeleton or an ignored path", dest)
 	}
-	if _, err := os.Lstat(diskPath(b, dest)); err == nil {
+	if info, err := os.Lstat(diskPath(b, dest)); err == nil && !caseRename(b, old, dest, info) {
 		return MoveResult{}, exit.Refused("%s exists", dest)
 	}
 	archive := frozenDest(b, dest)
@@ -88,13 +88,21 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 	changes := map[string]string{}
 	var modified []string
 	for _, p := range b.Pages {
-		if p.Path == b.IndexPath() || p.Path == b.LogPath() || p.Frozen {
+		isLog := p.Path == b.LogPath()
+		if p.Path == b.IndexPath() || isLog && (p.Frozen || appendOnly(b, p.Path)) {
 			continue
 		}
 		text := wiki.RewriteLinks(style, p.Text, rewrite(p.Path))
 		switch {
+		case p.Frozen && text != p.Text:
+			return MoveResult{}, exit.Refused("%s is frozen and holds a link the move would break", p.Path)
+		case p.Frozen:
 		case p.Path == old:
 			changes[dest] = text
+		case isLog:
+			if text != p.Text {
+				changes[p.Path] = text
+			}
 		case text != p.Text:
 			changes[p.Path] = text
 			modified = append(modified, p.Path)
@@ -117,6 +125,7 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 	}
 	_, indexUpdated := changes[b.IndexPath()]
 	res := MoveResult{Modified: modified, IndexUpdated: indexUpdated}
+	b.Renamed(old, dest)
 	if writeLog {
 		logOpts.Modified = modified
 		var err error
@@ -129,6 +138,19 @@ func Move(b *wiki.Base, o MoveOpts) (MoveResult, error) {
 
 func diskPath(b *wiki.Base, p string) string {
 	return filepath.Join(b.Boundary, filepath.FromSlash(p))
+}
+
+// On a case-insensitive filesystem, dest found on disk may be old itself.
+func caseRename(b *wiki.Base, old, dest string, destInfo fs.FileInfo) bool {
+	oldInfo, err := os.Lstat(diskPath(b, old))
+	return err == nil && old != dest && os.SameFile(oldInfo, destInfo)
+}
+
+func wikiPath(b *wiki.Base, p string) string {
+	if root := nfc(b.Cfg.Root); root != "." {
+		p = strings.TrimPrefix(p, root+"/")
+	}
+	return strings.TrimSuffix(p, ".md")
 }
 
 func reserved(b *wiki.Base, dest string) bool {
@@ -199,23 +221,28 @@ func checkMoveLog(b *wiki.Base, o LogOpts) error {
 	return nil
 }
 
-// Resolution uses the pre-move base only: its wikilink cache does not see the moved file.
+// Resolution uses the pre-move base; resolveAfter sees the moved file, to keep links another page would lose to it.
 func linkRewriter(b *wiki.Base, old, dest string) func(from string) func(wiki.Link) (string, bool) {
 	newDir := path.Dir(dest)
-	rootRel := strings.TrimPrefix(dest, b.Cfg.Root+"/")
-	if b.Cfg.Root == "." {
-		rootRel = dest
-	}
-	pathRef := strings.TrimSuffix(rootRel, ".md")
+	pathRef := wikiPath(b, dest)
 	oldStem := strings.TrimSuffix(path.Base(old), ".md")
 	newStem := strings.TrimSuffix(path.Base(dest), ".md")
 	stemRef := newStem
+	var resolveAfter func(string) (string, bool)
+	if b.Cfg.Links == "wikilink" {
+		files := maps.Clone(b.Files)
+		delete(files, old)
+		files[dest] = true
+		resolveAfter = wiki.WikilinkResolver(files)
+	}
 	switch {
 	case b.Cfg.Links != "wikilink":
-	case oldStem != newStem && stemTaken(b, old, newStem):
+	case oldStem != newStem && stemTaken(b, old, newStem) != "":
 		stemRef = pathRef
-	case oldStem == newStem && !winsAfterMove(b, old, dest, newStem):
-		stemRef = pathRef
+	case oldStem == newStem:
+		if p, _ := resolveAfter(newStem); p != dest {
+			stemRef = pathRef
+		}
 	}
 	return func(from string) func(wiki.Link) (string, bool) {
 		return func(l wiki.Link) (string, bool) {
@@ -225,7 +252,12 @@ func linkRewriter(b *wiki.Base, old, dest string) func(from string) func(wiki.Li
 			target, r := b.Resolve(from, l)
 			if b.Cfg.Links == "wikilink" {
 				switch {
-				case r != wiki.Resolved || target != old:
+				case r != wiki.Resolved:
+					return "", false
+				case target != old:
+					if now, _ := resolveAfter(l.Target); now != target {
+						return wikiPath(b, target), true
+					}
 					return "", false
 				case strings.Contains(l.Target, "/"):
 					return pathRef, true
@@ -249,22 +281,15 @@ func linkRewriter(b *wiki.Base, old, dest string) func(from string) func(wiki.Li
 	}
 }
 
-func winsAfterMove(b *wiki.Base, old, dest, stem string) bool {
-	files := maps.Clone(b.Files)
-	delete(files, old)
-	files[dest] = true
-	p, _ := wiki.ResolveWikilinkIn(files, stem)
-	return p == dest
-}
-
-func stemTaken(b *wiki.Base, old, stem string) bool {
+func stemTaken(b *wiki.Base, skip, stem string) string {
 	key := strings.ToLower(nfc(stem))
+	owner := ""
 	for f := range b.Files {
-		if f != old && strings.TrimSuffix(strings.ToLower(path.Base(f)), ".md") == key {
-			return true
+		if f != skip && strings.TrimSuffix(strings.ToLower(path.Base(f)), ".md") == key && (owner == "" || f < owner) {
+			owner = f
 		}
 	}
-	return false
+	return owner
 }
 
 func updateIndex(b *wiki.Base, old, dest string, archive bool, rewrite func(string) func(wiki.Link) (string, bool), changes map[string]string) error {
@@ -317,9 +342,14 @@ func updateIndex(b *wiki.Base, old, dest string, archive bool, rewrite func(stri
 
 func indexLine(b *wiki.Base, index, pagePath string) string {
 	for _, l := range strings.Split(index, "\n") {
+		l = strings.TrimSuffix(l, "\r")
 		if t, ok := entryTarget(b.Cfg.Links, l); ok && sameTarget(b, b.IndexPath(), t, pagePath) {
 			return l
 		}
 	}
 	return ""
+}
+
+func appendOnly(b *wiki.Base, p string) bool {
+	return slices.ContainsFunc(b.Cfg.AppendOnly, func(a string) bool { return config.SamePath(p, b.Cfg.RootPath(a)) })
 }

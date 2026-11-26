@@ -83,7 +83,11 @@ func indexGroup(b *wiki.Base, pagePath string) (heading string, flat, ok bool) {
 
 func LinkTo(b *wiki.Base, fromFile, pagePath, text string) string {
 	if b.Cfg.Links == "wikilink" {
-		return "[[" + strings.TrimSuffix(path.Base(pagePath), ".md") + "]]"
+		name := strings.TrimSuffix(path.Base(pagePath), ".md")
+		if p, r := b.Resolve(fromFile, wiki.Link{Target: name}); r == wiki.Resolved && p != nfc(pagePath) {
+			name = wikiPath(b, nfc(pagePath))
+		}
+		return "[[" + name + "]]"
 	}
 	rel := relPath(path.Dir(fromFile), pagePath)
 	text = strings.NewReplacer(`\`, `\\`, "[", `\[`, "]", `\]`).Replace(text)
@@ -134,6 +138,14 @@ func sameTarget(b *wiki.Base, indexPath, target, pagePath string) bool {
 }
 
 func rewriteIndex(b *wiki.Base, index, pagePath, newTarget string, change func(entries []string) []string) (string, error) {
+	if !strings.Contains(index, "\r\n") {
+		return rewriteIndexLF(b, index, pagePath, newTarget, change)
+	}
+	out, err := rewriteIndexLF(b, strings.ReplaceAll(index, "\r\n", "\n"), pagePath, newTarget, change)
+	return strings.ReplaceAll(out, "\n", "\r\n"), err
+}
+
+func rewriteIndexLF(b *wiki.Base, index, pagePath, newTarget string, change func(entries []string) []string) (string, error) {
 	heading, flat, ok := indexGroup(b, pagePath)
 	if !ok {
 		return index, nil

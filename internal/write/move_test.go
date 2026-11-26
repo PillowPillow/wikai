@@ -299,7 +299,7 @@ func TestMoveVaultRefusesWikilinkCharacters(t *testing.T) {
 	}
 }
 
-func TestMoveVaultSkipsLogWithFrontmatter(t *testing.T) {
+func TestMoveVaultRewritesLogLinks(t *testing.T) {
 	const log = "---\ntype: log\n---\n# Log\n\n## [2026-01-01] ingest | x\n- créé : [[Evals]]\n"
 	b, dir := vaultRepo(t, map[string]string{"log.md": log})
 	res, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: "20-wiki/concepts/LLM evals.md", Date: jan3})
@@ -309,7 +309,7 @@ func TestMoveVaultSkipsLogWithFrontmatter(t *testing.T) {
 	if strings.Join(res.Modified, ",") != "20-wiki/concepts/Harness.md" {
 		t.Fatalf("modified = %q", res.Modified)
 	}
-	want := log + "\n## [2026-01-03] move | Page 20-wiki/concepts/Evals.md renommée 20-wiki/concepts/LLM evals.md\n- créé : [[LLM evals]]\n- modifié : [[Harness]]\n- note : renommé depuis 20-wiki/concepts/Evals.md\n"
+	want := strings.Replace(log, "[[Evals]]", "[[LLM evals]]", 1) + "\n## [2026-01-03] move | Page 20-wiki/concepts/Evals.md renommée 20-wiki/concepts/LLM evals.md\n- créé : [[LLM evals]]\n- modifié : [[Harness]]\n- note : renommé depuis 20-wiki/concepts/Evals.md\n"
 	if got := read(t, dir, "log.md"); got != want {
 		t.Fatalf("log = %q", got)
 	}
@@ -367,5 +367,89 @@ func TestMoveVaultKeepsLinksToAnotherFileOfTheOldStem(t *testing.T) {
 		if got := read(t, dir, "20-wiki/concepts/Harness.md"); !strings.Contains(got, want) || !strings.Contains(got, "related: \"[[Evals]]\"") {
 			t.Errorf("%s: Harness = %q", dest, got)
 		}
+	}
+}
+
+func TestMoveVaultKeepsLinksThatTheMovedPageWouldTake(t *testing.T) {
+	b, dir := vaultRepo(t, map[string]string{
+		"20-wiki/entites/Note.md":       "---\ntype: wiki\n---\n",
+		"20-wiki/concepts/deep/Note.md": "---\ntype: wiki\n---\n",
+		"20-wiki/concepts/Ref.md":       "---\ntype: wiki\n---\n\n[[Note]] et [[deep/Note]].\n",
+	})
+	res, err := Move(b, MoveOpts{Old: "20-wiki/concepts/deep/Note.md", New: "20-wiki/Note.md", Date: jan3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, dir, "20-wiki/concepts/Ref.md"); !strings.Contains(got, "[[20-wiki/entites/Note]] et [[20-wiki/Note]].") {
+		t.Fatalf("Ref = %q", got)
+	}
+	b, _ = loadBase(t, dir)
+	for _, l := range wiki.Links(b.Cfg.Links, read(t, dir, res.Log)) {
+		if strings.EqualFold(path.Base(l.Target), "Note") {
+			if target, r := b.Resolve(res.Log, l); r != wiki.Resolved || target != "20-wiki/Note.md" {
+				t.Errorf("log: [[%s]] resolves to %q (%v)", l.Target, target, r)
+			}
+		}
+	}
+}
+
+func TestMoveVaultRefusesBreakingAFrozenLink(t *testing.T) {
+	b, dir := vaultRepo(t, map[string]string{"10-raw/src.md": "---\ntype: source\n---\n\n[[Evals]]\n"})
+	_, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: "20-wiki/concepts/LLM evals.md", Date: jan3})
+	if exit.Code(err) != 1 || !strings.Contains(err.Error(), "10-raw/src.md is frozen") {
+		t.Fatalf("err = %v", err)
+	}
+	if st := porcelain(t, dir); st != "" {
+		t.Fatalf("status = %q", st)
+	}
+}
+
+func TestMoveCaseOnlyRename(t *testing.T) {
+	b, dir := homeRepo(t, nil)
+	probe := filepath.Join(dir, "KNOWLEDGE")
+	if _, err := os.Stat(probe); err != nil {
+		t.Skip("case-sensitive filesystem")
+	}
+	if _, err := Move(b, MoveOpts{Old: "knowledge/glossary/contract.md", New: "knowledge/glossary/Contract.md", NoLog: true}); err != nil {
+		t.Fatal(err)
+	}
+	if st := porcelain(t, dir); !strings.Contains(st, "knowledge/glossary/contract.md -> knowledge/glossary/Contract.md") {
+		t.Fatalf("status = %q", st)
+	}
+	if got := read(t, dir, "knowledge/domains/api-contract.md"); !strings.Contains(got, "(../glossary/Contract.md#definition)") {
+		t.Fatalf("api-contract = %q", got)
+	}
+}
+
+func TestMoveVaultLogLinksTheMovedPageWhenItsNameIsShared(t *testing.T) {
+	b, dir := vaultRepo(t, map[string]string{
+		"20-wiki/Note.md":               "---\ntype: wiki\n---\n",
+		"20-wiki/concepts/deep/Note.md": "---\ntype: wiki\n---\n",
+	})
+	res, err := Move(b, MoveOpts{Old: "20-wiki/concepts/deep/Note.md", New: "20-wiki/concepts/x/Note.md", Date: jan3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, dir, res.Log); !strings.Contains(got, " : [[20-wiki/concepts/x/Note]]\n") {
+		t.Fatalf("log = %q", got)
+	}
+}
+
+func TestMoveVaultKeepsAppendOnlyLog(t *testing.T) {
+	cfg, err := os.ReadFile(filepath.Join("..", "config", "testdata", "brain.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	appendLog := strings.Replace(string(cfg), "append_only: [_meta/manifest.jsonl]", "append_only: [_meta/manifest.jsonl, log.md]", 1)
+	if appendLog == string(cfg) {
+		t.Fatal("append_only line not found")
+	}
+	const log = "---\ntype: log\n---\n# Log\n\n## [2026-01-01] ingest | x\n- créé : [[Evals]]\n"
+	b, dir := vaultRepo(t, map[string]string{"wikai.yaml": appendLog, "log.md": log})
+	if _, err := Move(b, MoveOpts{Old: "20-wiki/concepts/Evals.md", New: "20-wiki/concepts/LLM evals.md", Date: jan3}); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, dir, "log.md"); !strings.HasPrefix(got, log+"\n## [2026-01-03] move") {
+		t.Fatalf("log = %q", got)
 	}
 }

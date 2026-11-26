@@ -74,10 +74,17 @@ func NewPage(b *wiki.Base, o PageOpts) (string, error) {
 	if _, err := os.Lstat(disk); err == nil || b.Page(pagePath) != nil {
 		return "", exit.Refused("%s exists", pagePath)
 	}
+	pageTitle := title
+	if b.Cfg.Title == "filename" {
+		pageTitle = name
+	}
 	for _, p := range b.Pages {
-		if slices.Contains(wiki.Names(p), wiki.FoldName(title)) {
-			return "", exit.Refused("%q is already the title or an alias of %s: update that page", title, p.Path)
+		if slices.Contains(wiki.Names(p), wiki.FoldName(pageTitle)) {
+			return "", exit.Refused("%q is already the title or an alias of %s: update that page", pageTitle, p.Path)
 		}
+	}
+	if owner := stemTaken(b, "", name); b.Cfg.Links == "wikilink" && owner != "" {
+		return "", exit.Refused("%s already has the name %s: a [[%s]] link would not reach one of them", owner, name, name)
 	}
 
 	skeleton := kind.Skeleton

@@ -302,9 +302,18 @@ func wikilinkKey(target string) string {
 	return strings.TrimSuffix(strings.ToLower(nfc(target)), ".md")
 }
 
-func ResolveWikilinkIn(files map[string]bool, target string) (string, bool) {
-	p, ok := wikilinkTargets(files)[wikilinkKey(target)]
-	return p, ok
+func WikilinkResolver(files map[string]bool) func(target string) (string, bool) {
+	targets := wikilinkTargets(files)
+	return func(target string) (string, bool) {
+		p, ok := targets[wikilinkKey(target)]
+		return p, ok
+	}
+}
+
+func (b *Base) Renamed(old, dest string) {
+	delete(b.Files, old)
+	b.Files[dest] = true
+	b.wikilinkTargets = nil
 }
 
 // Every "/"-suffix of the path, with and without .md, is a key, so stems and path suffixes need no scan.

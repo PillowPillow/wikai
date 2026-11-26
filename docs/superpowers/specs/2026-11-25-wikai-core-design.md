@@ -261,7 +261,7 @@ or `OK: 148 pages`. `--json` prints the array `[{"check", "path", "message"}]`, 
 
 ### `wikai new page <kind> <title> --summary <text> [--slug S] [--date D] [--set key=value]...`
 
-1. Refuses when the file exists, or when the title is the title or an alias of another page (it names that page).
+1. Refuses when the file exists, when the new page's title (its file name under `title: filename`) is the title or an alias of another page (it names that page), or, with wikilink links, when another file has the same name.
 2. Copies the kind's skeleton and fills it: `{{title}}`, `{{date}}`, `{{slug}}`, `{{summary}}`, and `{{key}}` for each `--set`. Writes the `set` values of the kind. Fills required `date` keys left empty, except those marked `empty_allowed`. An empty section receives the empty-section text.
 3. Adds the index line.
 4. Prints the created path and the next steps (fill the sections, link the page, write the log entry).
@@ -274,7 +274,7 @@ Writes the entry described under `log`. Needs at least one `--created`, `--modif
 
 ### `wikai move <old> <new> [--no-log] [--note T]... [--date D]`
 
-Runs `git mv`, rewrites every link to the page in every page and in the index (markdown: the relative path; wikilink: the name, when the file name changes, keeping `|text` and `#anchor`), re-sorts the index group, and writes a `move` log entry. A move to a frozen path is an archive: the index line is removed. A move to the folder of another type is refused.
+Runs `git mv`, rewrites every link to the page in every page, in the index and in the log unless the log is frozen or append-only (markdown: the relative path; wikilink: the name, when the file name changes, keeping `|text` and `#anchor`), re-sorts the index group, and writes a `move` log entry. A move to a frozen path is an archive: the index line is removed. A move to the folder of another type is refused, and so is a move that would change a link in a frozen page.
 
 ### `wikai manifest hash|status|append <note> [--status S] [--pages P...] [--note T]`
 

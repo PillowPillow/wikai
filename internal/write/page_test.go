@@ -435,3 +435,51 @@ func TestNewPageVaultRefusesWikilinkBreakingName(t *testing.T) {
 		t.Fatalf("index changed")
 	}
 }
+
+func TestNewPageVaultFilenameTitleComparesThePageName(t *testing.T) {
+	b, dir := vaultBase(t)
+	if _, err := NewPage(b, PageOpts{Kind: "entity", Title: "Talk", Summary: "s", Date: jan2}); err != nil {
+		t.Fatal(err)
+	}
+	b, _ = loadBase(t, dir)
+	if p, err := NewPage(b, PageOpts{Kind: "summary", Title: "Talk", Summary: "s", Date: jan2}); err != nil || p != "20-wiki/resumes/Résumé - Talk.md" {
+		t.Fatalf("%q %v", p, err)
+	}
+}
+
+func TestNewPageVaultRefusesAnotherFileWithTheSameName(t *testing.T) {
+	b, dir := vaultBase(t)
+	if _, err := NewPage(b, PageOpts{Kind: "entity", Title: "Résumé - Q", Summary: "s", Date: jan2}); err != nil {
+		t.Fatal(err)
+	}
+	b, _ = loadBase(t, dir)
+	_, err := NewPage(b, PageOpts{Kind: "summary", Title: "Q", Summary: "s", Date: jan2})
+	if exit.Code(err) != 1 || !strings.Contains(err.Error(), "20-wiki/entites/Résumé - Q.md") {
+		t.Fatalf("err = %v", err)
+	}
+	if exists(dir, "20-wiki/resumes/Résumé - Q.md") {
+		t.Fatal("page written")
+	}
+	testrepo.Write(t, dir, map[string]string{"_meta/attachments/Notes.md": "x\n"})
+	b, _ = loadBase(t, dir)
+	if _, err := NewPage(b, PageOpts{Kind: "concept", Title: "notes", Summary: "s", Date: jan2}); exit.Code(err) != 1 {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestNewPageKeepsCRLFIndex(t *testing.T) {
+	dir := testrepo.New(t, map[string]string{
+		"wikai.yaml":            "version: 1\nroot: kb\ntypes:\n  note:\n    folders: [notes]\nindex:\n  file: index.md\n  groups:\n    notes: Notes\n",
+		"kb/_skeletons/note.md": "# {{title}}\n",
+		"kb/index.md":           "# Index\r\n\r\n## Notes\r\n\r\n- [b](notes/b.md) — b\r\n",
+		"kb/notes/b.md":         "# b\n",
+	})
+	b, _ := loadBase(t, dir)
+	if _, err := NewPage(b, PageOpts{Kind: "note", Title: "A", Summary: "a", Date: jan2}); err != nil {
+		t.Fatal(err)
+	}
+	want := "# Index\r\n\r\n## Notes\r\n\r\n- [A](notes/a.md) — a\r\n- [b](notes/b.md) — b\r\n"
+	if got := read(t, dir, "kb/index.md"); got != want {
+		t.Fatalf("index = %q", got)
+	}
+}
