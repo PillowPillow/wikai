@@ -163,3 +163,10 @@ func TestLinksUnknownStyle(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+func TestMarkdownLinkAfterEscapedBacktick(t *testing.T) {
+	want := []Link{{Line: 1, Target: "glossary/foo.md"}}
+	if got := Links("markdown", "- [a\\`b](glossary/foo.md) — c`d"); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v", got)
+	}
+}

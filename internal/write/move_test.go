@@ -491,3 +491,11 @@ func TestMoveRefusesAnEmptyPageNameWithoutLog(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestMoveRefusesBreakingAnArchiveLink(t *testing.T) {
+	b, dir := homeRepo(t, map[string]string{"knowledge/archive/old.md": "[c](../glossary/contract.md)\n"})
+	_, err := Move(b, MoveOpts{Old: "knowledge/glossary/contract.md", New: "knowledge/glossary/agreement.md", NoLog: true})
+	if exit.Code(err) != 1 || !strings.Contains(err.Error(), "knowledge/archive/old.md is frozen") || porcelain(t, dir) != "" {
+		t.Fatalf("err = %v, status = %q", err, porcelain(t, dir))
+	}
+}

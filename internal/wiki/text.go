@@ -81,6 +81,10 @@ func blankCodeSpans(s string) string {
 			i++
 			continue
 		}
+		if escaped(b, i) {
+			i++
+			continue
+		}
 		n := backtickRun(b, i)
 		end := -1
 		for j := i + n; j < len(b); {
@@ -105,6 +109,14 @@ func blankCodeSpans(s string) string {
 		i = end
 	}
 	return string(b)
+}
+
+func escaped(b []byte, i int) bool {
+	n := 0
+	for i-n > 0 && b[i-n-1] == '\\' {
+		n++
+	}
+	return n%2 == 1
 }
 
 func OutsideCode(text string) []Line {

@@ -90,7 +90,7 @@ func LinkTo(b *wiki.Base, fromFile, pagePath, text string) string {
 		return "[[" + name + "]]"
 	}
 	rel := relPath(path.Dir(fromFile), pagePath)
-	text = strings.NewReplacer(`\`, `\\`, "[", `\[`, "]", `\]`).Replace(text)
+	text = strings.NewReplacer(`\`, `\\`, "[", `\[`, "]", `\]`, "`", "\\`").Replace(text)
 	return "[" + text + "](" + wiki.EscapeTarget(rel) + ")"
 }
 

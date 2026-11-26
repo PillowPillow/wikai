@@ -498,3 +498,18 @@ func TestIndexAddWritesABracketedTitleThatParsesBack(t *testing.T) {
 		t.Fatalf("index = %q, err = %v", removed, err)
 	}
 }
+
+func TestIndexAddWritesABacktickTitleThatParsesBack(t *testing.T) {
+	b, _ := homeRepo(t, nil)
+	added, err := IndexAdd(b, moveIndex, "knowledge/glossary/foo.md", "a`b", "c`d")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(added, "- [a\\`b](glossary/foo.md) — c`d\n") {
+		t.Fatalf("index = %q", added)
+	}
+	removed, err := IndexRemove(b, added, "knowledge/glossary/foo.md")
+	if err != nil || removed != moveIndex {
+		t.Fatalf("index = %q, err = %v", removed, err)
+	}
+}
