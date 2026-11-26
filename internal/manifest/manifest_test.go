@@ -170,3 +170,17 @@ func TestAppendConcurrent(t *testing.T) {
 		}
 	}
 }
+
+func TestAppendAfterMissingTrailingNewline(t *testing.T) {
+	mf := filepath.Join(t.TempDir(), "m.jsonl")
+	if err := os.WriteFile(mf, []byte(`{"raw":"a"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	line, err := Append(mf, Record{Raw: "b", SHA256: "x", Status: "integrated"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data, _ := os.ReadFile(mf); string(data) != `{"raw":"a"}`+"\n"+line+"\n" {
+		t.Fatalf("%q", data)
+	}
+}

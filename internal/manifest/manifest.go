@@ -105,7 +105,7 @@ func Append(file string, r Record) (line string, err error) {
 	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
 		return "", err
 	}
-	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		return "", err
 	}
@@ -114,9 +114,28 @@ func Append(file string, r Record) (line string, err error) {
 		return "", err
 	}
 	defer syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+	sep, err := separator(f)
+	if err != nil {
+		return "", err
+	}
 	line = r.Line()
-	if _, err := f.WriteString(line + "\n"); err != nil {
+	if _, err := f.WriteString(sep + line + "\n"); err != nil {
 		return "", err
 	}
 	return line, nil
+}
+
+func separator(f *os.File) (string, error) {
+	info, err := f.Stat()
+	if err != nil || info.Size() == 0 {
+		return "", err
+	}
+	last := make([]byte, 1)
+	if _, err := f.ReadAt(last, info.Size()-1); err != nil {
+		return "", err
+	}
+	if last[0] == '\n' {
+		return "", nil
+	}
+	return "\n", nil
 }
